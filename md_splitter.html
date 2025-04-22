@@ -160,27 +160,86 @@
             const minSize = targetSize - rangeSize;
             const maxSize = targetSize + rangeSize;
 
-            // 强制分割文本，不考虑段落结构
+            // 智能分割文本，尽量在标点符号处分割
             function forceSplitText(text, maxChunkSize) {
                 const chunks = [];
                 let start = 0;
 
                 while (start < text.length) {
-                    // 尝试在句子结束处分割
                     let end = Math.min(start + maxChunkSize, text.length);
                     if (end < text.length) {
-                        // 尝试在句子结束处分割
-                        const sentenceEnd = text.substring(start, end + 100).search(/[.!?\u3002\uff01\uff1f]\s/);
-                        if (sentenceEnd > 0 && sentenceEnd < maxChunkSize) {
-                            end = start + sentenceEnd + 1;
-                        } else {
-                            // 如果找不到句子结束，尝试在空格处分割
-                            const lastSpace = text.substring(start, end).lastIndexOf(' ');
-                            if (lastSpace > start + maxChunkSize / 2) {
-                                end = start + lastSpace + 1;
+                        // 定义搜索范围，增加一些额外字符以找到更好的分割点
+                        const searchRange = text.substring(start, Math.min(end + 200, text.length));
+                        let foundBreakPoint = false;
+
+                        // 1. 优先在句子结束标点处分割（中英文的句号、问号、感叹号等）
+                        const sentenceEndRegex = /[.!?。！？]/g;
+                        let match;
+                        let bestSentenceEnd = -1;
+
+                        // 重置正则表达式的lastIndex
+                        sentenceEndRegex.lastIndex = 0;
+
+                        // 查找所有句子结束标点
+                        while ((match = sentenceEndRegex.exec(searchRange)) !== null) {
+                            // 确保找到的位置不超过最大块大小
+                            if (match.index <= maxChunkSize) {
+                                bestSentenceEnd = match.index;
+                            } else {
+                                break; // 超出范围，停止搜索
                             }
-                            // 如果还是找不到合适的分割点，就强制分割
                         }
+
+                        // 如果找到了合适的句子结束点
+                        if (bestSentenceEnd >= 0) {
+                            end = start + bestSentenceEnd + 1; // +1 包含标点符号
+                            foundBreakPoint = true;
+                        }
+
+                        // 2. 如果没找到句子结束标点，尝试在逗号、分号等次要标点处分割
+                        if (!foundBreakPoint) {
+                            const minAcceptableSize = Math.floor(maxChunkSize * 0.7); // 至少要有70%的目标大小
+                            const punctuationRegex = /[,;:，；：、]/g;
+                            let bestPunctEnd = -1;
+
+                            // 重置正则表达式的lastIndex
+                            punctuationRegex.lastIndex = 0;
+
+                            // 查找所有次要标点
+                            while ((match = punctuationRegex.exec(searchRange)) !== null) {
+                                // 确保找到的位置不超过最大块大小且大于最小可接受大小
+                                if (match.index <= maxChunkSize && match.index >= minAcceptableSize) {
+                                    bestPunctEnd = match.index;
+                                } else if (match.index > maxChunkSize) {
+                                    break; // 超出范围，停止搜索
+                                }
+                            }
+
+                            // 如果找到了合适的标点
+                            if (bestPunctEnd >= 0) {
+                                end = start + bestPunctEnd + 1; // +1 包含标点符号
+                                foundBreakPoint = true;
+                            }
+                        }
+
+                        // 3. 如果还是没找到，尝试在空格或换行处分割
+                        if (!foundBreakPoint) {
+                            // 先尝试找换行
+                            const lastNewline = searchRange.substring(0, maxChunkSize).lastIndexOf('\n');
+                            if (lastNewline > maxChunkSize * 0.5) { // 至少要有50%的目标大小
+                                end = start + lastNewline + 1;
+                                foundBreakPoint = true;
+                            } else {
+                                // 再尝试找空格
+                                const lastSpace = searchRange.substring(0, maxChunkSize).lastIndexOf(' ');
+                                if (lastSpace > maxChunkSize * 0.5) {
+                                    end = start + lastSpace + 1;
+                                    foundBreakPoint = true;
+                                }
+                            }
+                        }
+
+                        // 如果所有方法都失败，保持原来的强制分割方式
                     }
 
                     chunks.push(text.substring(start, end));
@@ -190,7 +249,7 @@
                 return chunks;
             }
 
-            // 直接强制分割文本
+            // 使用智能分割算法分割文本
             const chunks = forceSplitText(content, maxSize);
             console.log(`Split into ${chunks.length} chunks`);
 
