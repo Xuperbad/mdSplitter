@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown文档分割工具</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .input-group, .output-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: monospace;
+            resize: vertical;
+        }
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        input[type="number"] {
+            width: 80px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .output-files {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .file-item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .file-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .file-content {
+            white-space: pre-wrap;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .download-all {
+            margin-top: 20px;
+            align-self: center;
+        }
+        .debug-info {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Markdown文档分割工具</h1>
+    <div class="container">
+        <div class="input-group">
+            <h2>输入Markdown文本</h2>
+            <textarea id="input-text" placeholder="在此粘贴您的Markdown文本..."></textarea>
+            <div class="controls">
+                <div class="control-item">
+                    <label for="target-size">目标字符数:</label>
+                    <input type="number" id="target-size" value="1250" min="500" max="5000">
+                </div>
+                <div class="control-item">
+                    <label for="range-size">可接受范围:</label>
+                    <input type="number" id="range-size" value="250" min="100" max="1000">
+                </div>
+                <div class="control-item">
+                    <label for="base-filename">基础文件名:</label>
+                    <input type="text" id="base-filename" value="分割文档" style="width: 150px;">
+                </div>
+                <button id="split-button">分割文档</button>
+                <button id="debug-button" style="background-color: #607D8B;">显示调试信息</button>
+            </div>
+        </div>
+        <div class="output-group">
+            <h2>分割结果</h2>
+            <div id="output-files" class="output-files"></div>
+            <button id="download-all" class="download-all" style="display: none;">下载所有文件</button>
+        </div>
+    </div>
+
+    <script>
+        // 计算文本的实际字符数（不包括Markdown标记）
+        function countCharacters(text) {
+            // 移除代码块
+            text = text.replace(/```[\s\S]*?```/g, '');
+            // 移除链接
+            text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+            // 移除图片
+            text = text.replace(/!\[([^\]]*)\]\([^)]+\)/g, '');
+            // 移除HTML标签
+            text = text.replace(/<[^>]+>/g, '');
+            // 移除标题标记
+            text = text.replace(/^#+\s+/gm, '');
+            // 移除粗体和斜体标记
+            text = text.replace(/\*\*([^*]+)\*\*/g, '$1');
+            text = text.replace(/\*([^*]+)\*/g, '$1');
+            text = text.replace(/__([^_]+)__/g, '$1');
+            text = text.replace(/_([^_]+)_/g, '$1');
+
+            return text.length;
+        }
+
+        // 分割Markdown文本
+        function splitMarkdown(content, targetSize, rangeSize, baseName) {
+            console.log('Starting to split document...');
+            console.log(`Target size: ${targetSize}, Range: ${rangeSize}`);
+            console.log(`Total content length: ${content.length}`);
+
+            const minSize = targetSize - rangeSize;
+            const maxSize = targetSize + rangeSize;
+
+            // 强制分割文本，不考虑段落结构
+            function forceSplitText(text, maxChunkSize) {
+                const chunks = [];
+                let start = 0;
+
+                while (start < text.length) {
+                    // 尝试在句子结束处分割
+                    let end = Math.min(start + maxChunkSize, text.length);
+                    if (end < text.length) {
+                        // 尝试在句子结束处分割
+                        const sentenceEnd = text.substring(start, end + 100).search(/[.!?\u3002\uff01\uff1f]\s/);
+                        if (sentenceEnd > 0 && sentenceEnd < maxChunkSize) {
+                            end = start + sentenceEnd + 1;
+                        } else {
+                            // 如果找不到句子结束，尝试在空格处分割
+                            const lastSpace = text.substring(start, end).lastIndexOf(' ');
+                            if (lastSpace > start + maxChunkSize / 2) {
+                                end = start + lastSpace + 1;
+                            }
+                            // 如果还是找不到合适的分割点，就强制分割
+                        }
+                    }
+
+                    chunks.push(text.substring(start, end));
+                    start = end;
+                }
+
+                return chunks;
+            }
+
+            // 直接强制分割文本
+            const chunks = forceSplitText(content, maxSize);
+            console.log(`Split into ${chunks.length} chunks`);
+
+            // 创建结果数组
+            const results = [];
+            for (let i = 0; i < chunks.length; i++) {
+                const chunk = chunks[i];
+                const chunkSize = countCharacters(chunk);
+
+                results.push({
+                    filename: `${baseName}-part${i+1}.md`,
+                    content: chunk,
+                    size: chunkSize
+                });
+
+                console.log(`Created part ${i+1} with ${chunkSize} characters`);
+            }
+
+            // 如果没有生成任何文件（可能是输入为空），创建一个空文件
+            if (results.length === 0) {
+                results.push({
+                    filename: `${baseName}-part1.md`,
+                    content: '',
+                    size: 0
+                });
+                console.log('Created empty file as no content was provided');
+            }
+
+            console.log(`Splitting complete. Created ${results.length} files.`);
+            return results;
+        }
+
+        // 创建下载链接
+        function createDownloadLink(filename, content) {
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.textContent = '下载';
+            a.className = 'download-link';
+            return a;
+        }
+
+        // 创建ZIP文件包含所有分割的文件
+        async function createZipFile(files) {
+            // 动态加载JSZip库
+            if (typeof JSZip === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+                document.head.appendChild(script);
+
+                // 等待库加载完成
+                await new Promise(resolve => script.onload = resolve);
+            }
+
+            const zip = new JSZip();
+
+            // 添加所有文件到ZIP
+            files.forEach(file => {
+                zip.file(file.filename, file.content);
+            });
+
+            // 生成ZIP文件
+            const blob = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(blob);
+
+            // 创建下载链接
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${document.getElementById('base-filename').value}.zip`;
+            a.click();
+
+            // 清理
+            URL.revokeObjectURL(url);
+        }
+
+        // 事件监听器
+        document.getElementById('split-button').addEventListener('click', () => {
+            const inputText = document.getElementById('input-text').value;
+            const targetSize = parseInt(document.getElementById('target-size').value);
+            const rangeSize = parseInt(document.getElementById('range-size').value);
+            const baseName = document.getElementById('base-filename').value;
+
+            if (!inputText) {
+                alert('请输入Markdown文本');
+                return;
+            }
+
+            // 显示处理中的提示
+            const outputFiles = document.getElementById('output-files');
+            outputFiles.innerHTML = '<div style="text-align: center; padding: 20px;">正在分割文档...</div>';
+
+            // 使用setTimeout来避免浏览器卡顿
+            setTimeout(() => {
+                const results = splitMarkdown(inputText, targetSize, rangeSize, baseName);
+                outputFiles.innerHTML = '';
+
+                // 添加摘要信息
+                const summaryDiv = document.createElement('div');
+                summaryDiv.style.marginBottom = '20px';
+                summaryDiv.style.padding = '10px';
+                summaryDiv.style.backgroundColor = '#f0f8ff';
+                summaryDiv.style.borderRadius = '4px';
+
+                // 计算实际字符数（去除Markdown标记后）
+                const actualCharCount = countCharacters(inputText);
+
+                // 计算分割后的实际字符数总和
+                const totalSplitSize = results.reduce((sum, file) => sum + file.size, 0);
+
+                // 计算每个文件的字符数统计
+                const fileSizeStats = {};
+                results.forEach(result => {
+                    const sizeRange = Math.floor(result.size / 100) * 100;
+                    fileSizeStats[sizeRange] = (fileSizeStats[sizeRange] || 0) + 1;
+                });
+
+                // 生成文件大小分布统计
+                let sizeDistribution = '';
+                Object.keys(fileSizeStats).sort((a, b) => a - b).forEach(range => {
+                    sizeDistribution += `${range}-${parseInt(range) + 99}字符: ${fileSizeStats[range]}个文件<br>`;
+                });
+
+                summaryDiv.innerHTML = `
+                    <strong>分割结果摘要:</strong><br>
+                    <span style="color: #555; font-size: 0.9em;">整个文档已被分割成多个小文件，每个文件字符数在目标范围内</span><br><br>
+                    原始总字符数: ${inputText.length}<br>
+                    有效字符数(去除Markdown标记): ${actualCharCount}<br>
+                    <strong>分割后文件数: ${results.length}</strong><br>
+                    每个文件的目标字符数范围: ${targetSize - rangeSize} - ${targetSize + rangeSize}<br>
+                    分割后字符总数: ${totalSplitSize}<br><br>
+                    <strong>文件大小分布:</strong><br>
+                    ${sizeDistribution}
+                `;
+                outputFiles.appendChild(summaryDiv);
+
+                results.forEach(result => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+
+                    const fileHeader = document.createElement('div');
+                    fileHeader.className = 'file-header';
+
+                    const fileTitle = document.createElement('span');
+                    fileTitle.textContent = `${result.filename} (${result.size} 字符)`;
+
+                    fileHeader.appendChild(fileTitle);
+                    fileHeader.appendChild(createDownloadLink(result.filename, result.content));
+
+                    const fileContent = document.createElement('div');
+                    fileContent.className = 'file-content';
+                    fileContent.textContent = result.content.length > 500
+                        ? result.content.substring(0, 500) + '...'
+                        : result.content;
+
+                    fileItem.appendChild(fileHeader);
+                    fileItem.appendChild(fileContent);
+                    outputFiles.appendChild(fileItem);
+                });
+
+                const downloadAllButton = document.getElementById('download-all');
+                downloadAllButton.style.display = 'block';
+                downloadAllButton.onclick = () => createZipFile(results);
+            }, 50); // 小延迟以确保界面能先更新
+        });
+    </script>
+
+    <!-- 添加JSZip库用于批量下载 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+</body>
+</html>
