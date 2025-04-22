@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown文档分割工具</title>
+    <title>Markdown文档分割与合并工具</title>
     <style>
         html, body {
             font-family: 'Microsoft YaHei', Arial, sans-serif;
@@ -213,12 +213,145 @@
             font-size: 12px;
             color: #666;
         }
+
+        /* 多文件合并区域样式 */
+        .merge-files-container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+        }
+
+        .merge-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .merge-header h3 {
+            margin: 0;
+            color: #2e7d32;
+        }
+
+        .merge-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .merge-button {
+            background-color: #2196F3;
+        }
+
+        .merge-button:hover {
+            background-color: #1976D2;
+        }
+
+        .clear-button {
+            background-color: #f44336;
+        }
+
+        .clear-button:hover {
+            background-color: #d32f2f;
+        }
+
+        .merge-tip {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .file-item-draggable {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: move;
+            transition: all 0.2s ease;
+        }
+
+        .file-item-draggable:hover {
+            background-color: #f0f0f0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-item-draggable.dragging {
+            opacity: 0.5;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .file-number {
+            min-width: 24px;
+            height: 24px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .file-name {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .file-preview-btn, .file-remove-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            color: #666;
+            transition: color 0.2s ease;
+            box-shadow: none;
+        }
+
+        .file-preview-btn:hover {
+            color: #2196F3;
+        }
+
+        .file-remove-btn:hover {
+            color: #f44336;
+        }
     </style>
 </head>
 <body>
     <!-- 页面内容开始 -->
     <div class="main-container">
-        <h1>Markdown文档分割工具</h1>
+        <h1>Markdown文档分割与合并工具</h1>
         <div class="container">
         <div class="input-group">
             <h2>输入Markdown文本</h2>
@@ -227,8 +360,22 @@
                 <div class="page-drop-indicator" id="page-drop-indicator"></div>
                 <p>拖放Markdown文件到这里，或</p>
                 <label for="file-input" class="file-label">选择文件</label>
-                <input type="file" id="file-input" class="file-input" accept=".md,.markdown,text/markdown,text/plain">
+                <input type="file" id="file-input" class="file-input" accept=".md,.markdown,text/markdown,text/plain" multiple>
             </div>
+
+            <!-- 多文件合并区域 -->
+            <div id="merge-files-container" class="merge-files-container" style="display: none;">
+                <div class="merge-header">
+                    <h3>待合并文件</h3>
+                    <div class="merge-actions">
+                        <button id="merge-button" class="merge-button">合并文件</button>
+                        <button id="clear-files-button" class="clear-button">清空文件</button>
+                    </div>
+                </div>
+                <p class="merge-tip">拖动文件可调整合并顺序</p>
+                <div id="file-list" class="file-list"></div>
+            </div>
+
             <textarea id="input-text" placeholder="在此粘贴您的Markdown文本..."></textarea>
             <div class="controls">
                 <div class="control-item">
@@ -256,7 +403,7 @@
     </div>
 
     <footer style="text-align: center; margin-top: 30px; padding: 15px; color: #666; font-size: 14px;">
-        <p><span style="color: #4CAF50;">&#9776;</span> Markdown文档分割工具 &copy; 2024 | 支持拖放文件和智能分割</p>
+        <p><span style="color: #4CAF50;">&#9776;</span> Markdown文档分割与合并工具 &copy; 2024 | 支持拖放文件、智能分割和多文件合并</p>
     </footer>
 
     <script>
@@ -541,6 +688,9 @@
             }
         }
 
+        // 全局变量存储上传的文件
+        let uploadedFiles = [];
+
         // 处理文件选择
         fileInput.addEventListener('change', function() {
             handleFiles(this.files);
@@ -548,17 +698,25 @@
 
         function handleFiles(files) {
             if (files.length) {
-                const file = files[0];
-                // 检查文件类型
-                if (file.type === 'text/markdown' || file.type === 'text/plain' || file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
-                    readFile(file);
+                // 检查是否为多文件上传
+                if (files.length > 1) {
+                    // 多文件处理模式
+                    processMultipleFiles(files);
                 } else {
-                    alert('请选择Markdown文件(.md或.markdown)或纯文本文件');
+                    // 单文件处理模式
+                    const file = files[0];
+                    // 检查文件类型
+                    if (file.type === 'text/markdown' || file.type === 'text/plain' || file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
+                        readSingleFile(file);
+                    } else {
+                        alert('请选择Markdown文件(.md或.markdown)或纯文本文件');
+                    }
                 }
             }
         }
 
-        function readFile(file) {
+        // 处理单个文件上传
+        function readSingleFile(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 inputText.value = e.target.result;
@@ -569,6 +727,160 @@
             reader.readAsText(file);
         }
 
+        // 处理多文件上传
+        function processMultipleFiles(files) {
+            // 清空当前文件列表
+            uploadedFiles = [];
+
+            // 处理每个文件
+            Array.from(files).forEach(file => {
+                if (file.type === 'text/markdown' || file.type === 'text/plain' || file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
+                    // 读取文件内容
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // 添加到文件列表
+                        uploadedFiles.push({
+                            name: file.name,
+                            content: e.target.result,
+                            size: file.size
+                        });
+
+                        // 更新UI
+                        updateFileList();
+                    };
+                    reader.readAsText(file);
+                }
+            });
+
+            // 显示合并区域
+            document.getElementById('merge-files-container').style.display = 'block';
+        }
+
+        // 更新文件列表UI
+        function updateFileList() {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '';
+
+            uploadedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item-draggable';
+                fileItem.setAttribute('data-index', index);
+                fileItem.draggable = true;
+
+                // 格式化文件大小
+                const fileSize = formatFileSize(file.size);
+
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <div class="file-number">${index + 1}</div>
+                        <div>
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-size">${fileSize}</div>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="file-preview-btn" title="预览文件">预览</button>
+                        <button class="file-remove-btn" title="移除文件">删除</button>
+                    </div>
+                `;
+
+                // 添加预览按钮事件
+                fileItem.querySelector('.file-preview-btn').addEventListener('click', () => {
+                    previewFile(index);
+                });
+
+                // 添加删除按钮事件
+                fileItem.querySelector('.file-remove-btn').addEventListener('click', () => {
+                    removeFile(index);
+                });
+
+                // 添加拖放事件
+                fileItem.addEventListener('dragstart', handleDragStart);
+                fileItem.addEventListener('dragover', handleDragOver);
+                fileItem.addEventListener('dragleave', handleDragLeave);
+                fileItem.addEventListener('drop', handleDragDrop);
+                fileItem.addEventListener('dragend', handleDragEnd);
+
+                fileList.appendChild(fileItem);
+            });
+
+            // 如果没有文件，隐藏合并区域
+            if (uploadedFiles.length === 0) {
+                document.getElementById('merge-files-container').style.display = 'none';
+            }
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes < 1024) {
+                return bytes + ' B';
+            } else if (bytes < 1024 * 1024) {
+                return (bytes / 1024).toFixed(1) + ' KB';
+            } else {
+                return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            }
+        }
+
+        // 预览文件
+        function previewFile(index) {
+            const file = uploadedFiles[index];
+            if (file) {
+                // 将文件内容显示在文本区域
+                inputText.value = file.content;
+            }
+        }
+
+        // 移除文件
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            updateFileList();
+        }
+
+        // 拖放排序相关函数
+        let draggedItem = null;
+
+        function handleDragStart(e) {
+            this.classList.add('dragging');
+            draggedItem = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragLeave() {
+            this.classList.remove('over');
+        }
+
+        function handleDragDrop(e) {
+            e.stopPropagation();
+
+            if (draggedItem !== this) {
+                // 获取拖放前后的索引
+                const fromIndex = parseInt(draggedItem.getAttribute('data-index'));
+                const toIndex = parseInt(this.getAttribute('data-index'));
+
+                // 重新排序数组
+                const item = uploadedFiles[fromIndex];
+                uploadedFiles.splice(fromIndex, 1);
+                uploadedFiles.splice(toIndex, 0, item);
+
+                // 更新UI
+                updateFileList();
+            }
+
+            return false;
+        }
+
+        function handleDragEnd() {
+            this.classList.remove('dragging');
+            return false;
+        }
+
         // 清空按钮事件
         document.getElementById('clear-button').addEventListener('click', () => {
             inputText.value = '';
@@ -576,6 +888,55 @@
             document.getElementById('output-files').innerHTML = '';
             document.getElementById('download-all').style.display = 'none';
         });
+
+        // 清空文件列表按钮事件
+        document.getElementById('clear-files-button').addEventListener('click', () => {
+            uploadedFiles = [];
+            updateFileList();
+            inputText.value = '';
+        });
+
+        // 合并文件按钮事件
+        document.getElementById('merge-button').addEventListener('click', () => {
+            if (uploadedFiles.length === 0) {
+                alert('没有可合并的文件');
+                return;
+            }
+
+            // 合并文件
+            mergeFiles();
+        });
+
+        // 合并文件函数
+        function mergeFiles() {
+            let mergedContent = '';
+            let mergedFileName = '合并文档';
+
+            // 如果只有一个文件，使用其文件名
+            if (uploadedFiles.length === 1) {
+                mergedFileName = uploadedFiles[0].name.replace(/\.[^/.]+$/, "");
+            }
+
+            // 合并所有文件内容
+            uploadedFiles.forEach((file, index) => {
+                // 添加文件分隔符（除了第一个文件）
+                if (index > 0) {
+                    mergedContent += '\n\n---\n\n';
+                }
+
+                // 添加文件内容
+                mergedContent += file.content;
+            });
+
+            // 将合并结果显示在文本区域
+            inputText.value = mergedContent;
+
+            // 更新基础文件名
+            document.getElementById('base-filename').value = mergedFileName;
+
+            // 显示成功消息
+            alert(`成功合并 ${uploadedFiles.length} 个文件！`);
+        }
 
         // 分割按钮事件监听器
         document.getElementById('split-button').addEventListener('click', () => {
