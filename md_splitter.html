@@ -141,20 +141,29 @@
             width: 100%;
             min-height: 300px;
             padding: 15px;
-            border: 1px solid #ddd;
+            border: 2px dashed #4CAF50;
             border-radius: 8px;
             font-family: monospace;
             resize: vertical;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-            transition: border 0.2s ease, box-shadow 0.2s ease;
+            transition: all 0.3s ease;
             font-size: 14px;
             line-height: 1.5;
+            background-color: #f9fff9;
         }
 
         textarea:focus {
             outline: none;
             border-color: #4285F4;
+            border-style: solid;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 8px rgba(66, 133, 244, 0.3);
+            background-color: #fff;
+        }
+
+        textarea.active-drop {
+            border-color: #4CAF50;
+            background-color: rgba(76, 175, 80, 0.1);
+            border-width: 3px;
         }
 
         /* 添加占位文本样式 */
@@ -421,9 +430,15 @@
             font-weight: normal;
         }
 
-        .output-drop-zone {
+        .output-textarea {
             border-color: #2196F3;
             background-color: #E3F2FD;
+        }
+
+        .output-textarea.active-drop {
+            border-color: #2196F3;
+            background-color: rgba(33, 150, 243, 0.1);
+            border-width: 3px;
         }
 
         .merge-header {
@@ -685,14 +700,6 @@
                         <button id="clear-input-button" class="small-button clear-button">清空</button>
                     </div>
                 </div>
-            <div class="drop-zone" id="drop-zone">
-                <!-- 拖放文件到区域时的视觉提示 -->
-                <div class="page-drop-indicator" id="page-drop-indicator"></div>
-                <p>拖放Markdown文件到这里，或</p>
-                <label for="file-input" class="file-label">选择文件</label>
-                <input type="file" id="file-input" class="file-input" accept=".md,.markdown,text/markdown,text/plain" multiple>
-            </div>
-
             <!-- 多文件合并区域 -->
             <div id="merge-files-container" class="merge-files-container" style="display: none;">
                 <div class="merge-header">
@@ -707,7 +714,8 @@
             </div>
 
             <div class="textarea-container">
-                <textarea id="input-text" placeholder="在此粘贴您的Markdown文本..."></textarea>
+                <input type="file" id="file-input" class="file-input" accept=".md,.markdown,text/markdown,text/plain" multiple>
+                <textarea id="input-text" placeholder="在此粘贴您的Markdown文本，或直接拖放Markdown文件到这里..."></textarea>
                 <div id="char-counter" class="char-counter">0 字符</div>
             </div>
             <div class="action-panel">
@@ -743,10 +751,9 @@
                     <button id="clear-output-button" class="small-button clear-button">清空</button>
                 </div>
             </div>
-            <div class="drop-zone output-drop-zone" id="output-drop-zone">
-                <p>拖放多个Markdown文件到这里进行合并</p>
-                <label for="output-file-input" class="file-label">选择文件</label>
+            <div class="textarea-container">
                 <input type="file" id="output-file-input" class="file-input" accept=".md,.markdown,text/markdown,text/plain" multiple>
+                <textarea id="output-text" class="output-textarea" placeholder="拖放多个Markdown文件到这里进行合并..."></textarea>
             </div>
 
             <!-- 多文件合并区域 -->
@@ -770,10 +777,13 @@
                     </div>
                 </div>
                 <div class="action-buttons">
-                    <button id="merge-button" class="primary-button">合并文件</button>
+                    <button id="merge-button-output" class="primary-button">合并文件</button>
                     <button id="download-all" class="download-all" style="display: none;">下载所有文件</button>
                 </div>
             </div>
+
+            <!-- 添加输出文件显示区域 -->
+            <div id="output-files" class="output-files"></div>
         </div>
     </div>
     </div>
@@ -786,7 +796,7 @@
                 <div class="help-item">
                     <h4>分割文档</h4>
                     <ol>
-                        <li>在左侧输入框中粘贴或拖入Markdown文本</li>
+                        <li>在左侧文本框中粘贴或直接拖入Markdown文件</li>
                         <li>设置目标字符数和可接受范围</li>
                         <li>输入基础文件名</li>
                         <li>点击“分割文档”按钮</li>
@@ -795,7 +805,7 @@
                 <div class="help-item">
                     <h4>合并文档</h4>
                     <ol>
-                        <li>在右侧拖入多个Markdown文件</li>
+                        <li>在右侧文本框中直接拖入多个Markdown文件</li>
                         <li>通过拖放调整文件顺序</li>
                         <li>输入合并后的文件名</li>
                         <li>点击“合并文件”按钮</li>
@@ -1017,44 +1027,20 @@
         }
 
         // 文件拖放和选择功能
-        const dropZone = document.getElementById('drop-zone');
-        const outputDropZone = document.getElementById('output-drop-zone');
         const fileInput = document.getElementById('file-input');
         const outputFileInput = document.getElementById('output-file-input');
         const inputText = document.getElementById('input-text');
+        const outputText = document.getElementById('output-text');
 
         // 阻止默认拖放行为
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-            outputDropZone.addEventListener(eventName, preventDefaults, false);
+            inputText.addEventListener(eventName, preventDefaults, false);
+            outputText.addEventListener(eventName, preventDefaults, false);
             document.body.addEventListener(eventName, preventDefaults, false);
         });
 
         // 允许拖放到整个页面
         document.body.addEventListener('drop', handleBodyDrop, false);
-
-        // 拖放区域指示器
-        const pageDropIndicator = document.getElementById('page-drop-indicator');
-
-        // 添加拖放区域的事件监听器
-        dropZone.addEventListener('dragenter', function(e) {
-            if (e.dataTransfer.types.includes('Files')) {
-                pageDropIndicator.classList.add('active');
-            }
-        });
-
-        dropZone.addEventListener('dragleave', function(e) {
-            // 当鼠标离开拖放区域时移除指示器
-            const rect = dropZone.getBoundingClientRect();
-            if (e.clientX < rect.left || e.clientX >= rect.right ||
-                e.clientY < rect.top || e.clientY >= rect.bottom) {
-                pageDropIndicator.classList.remove('active');
-            }
-        });
-
-        dropZone.addEventListener('drop', function() {
-            pageDropIndicator.classList.remove('active');
-        });
 
         function preventDefaults(e) {
             e.preventDefault();
@@ -1063,23 +1049,33 @@
 
         // 添加视觉反馈
         ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, highlight, false);
+            inputText.addEventListener(eventName, highlight, false);
+            outputText.addEventListener(eventName, highlightOutput, false);
         });
 
         ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, unhighlight, false);
+            inputText.addEventListener(eventName, unhighlight, false);
+            outputText.addEventListener(eventName, unhighlightOutput, false);
         });
 
         function highlight() {
-            dropZone.classList.add('active');
+            inputText.classList.add('active-drop');
         }
 
         function unhighlight() {
-            dropZone.classList.remove('active');
+            inputText.classList.remove('active-drop');
+        }
+
+        function highlightOutput() {
+            outputText.classList.add('active-drop');
+        }
+
+        function unhighlightOutput() {
+            outputText.classList.remove('active-drop');
         }
 
         // 处理拖放文件
-        dropZone.addEventListener('drop', handleDrop, false);
+        inputText.addEventListener('drop', handleDrop, false);
 
         function handleDrop(e) {
             const dt = e.dataTransfer;
@@ -1094,11 +1090,11 @@
             if (files.length) {
                 handleFiles(files);
                 // 滚动到输入区域
-                dropZone.scrollIntoView({ behavior: 'smooth' });
-                // 高亮拖放区域一下以提供视觉反馈
-                dropZone.classList.add('active');
+                inputText.scrollIntoView({ behavior: 'smooth' });
+                // 高亮文本框一下以提供视觉反馈
+                inputText.classList.add('active-drop');
                 setTimeout(() => {
-                    dropZone.classList.remove('active');
+                    inputText.classList.remove('active-drop');
                 }, 800);
             }
         }
@@ -1117,25 +1113,12 @@
         });
 
         // 输出区拖放处理
-        outputDropZone.addEventListener('drop', function(e) {
+        outputText.addEventListener('drop', function(e) {
             const dt = e.dataTransfer;
             const files = dt.files;
             if (files.length) {
                 processMultipleFiles(files);
             }
-        });
-
-        // 输出区拖放视觉反馈
-        ['dragenter', 'dragover'].forEach(eventName => {
-            outputDropZone.addEventListener(eventName, function() {
-                this.classList.add('active');
-            }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            outputDropZone.addEventListener(eventName, function() {
-                this.classList.remove('active');
-            }, false);
         });
 
         function handleFiles(files) {
@@ -1338,6 +1321,17 @@
 
         // 合并文件按钮事件
         document.getElementById('merge-button').addEventListener('click', () => {
+            if (uploadedFiles.length === 0) {
+                alert('没有可合并的文件');
+                return;
+            }
+
+            // 合并文件
+            mergeFiles();
+        });
+
+        // 输出区合并文件按钮事件
+        document.getElementById('merge-button-output').addEventListener('click', () => {
             if (uploadedFiles.length === 0) {
                 alert('没有可合并的文件');
                 return;
