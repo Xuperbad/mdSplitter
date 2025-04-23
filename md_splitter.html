@@ -5,21 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Markdown文档分割与合并工具</title>
     <style>
-        body {
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --secondary-color: #2ecc71;
+            --secondary-dark: #27ae60;
+            --text-color: #333;
+            --light-text: #666;
+            --border-color: #e0e0e0;
+            --bg-color: #f9f9f9;
+            --card-bg: #fff;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
         h1 {
             text-align: center;
-            color: #333;
+            color: var(--primary-color);
+            font-weight: 500;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--light-text);
+            font-size: 16px;
+            max-width: 600px;
+            margin: 0 auto;
         }
         .container {
             display: flex;
             flex-direction: row;
-            gap: 20px;
+            gap: 30px;
             margin-top: 20px;
             position: relative;
         }
@@ -56,15 +93,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #e0e0e0;
-            margin-bottom: 10px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 15px;
         }
 
         .panel-header h2 {
             margin: 0;
             font-size: 18px;
-            color: #333;
+            color: var(--text-color);
+            font-weight: 500;
         }
 
         .panel-actions {
@@ -74,8 +112,20 @@
 
         .small-button {
             padding: 5px 10px;
-            font-size: 14px;
+            font-size: 13px;
             border-radius: 4px;
+            background-color: #f1f1f1;
+            color: var(--light-text);
+            border: 1px solid var(--border-color);
+            box-shadow: none;
+            transition: all 0.2s ease;
+        }
+
+        .small-button:hover {
+            background-color: #e0e0e0;
+            color: var(--text-color);
+            transform: none;
+            box-shadow: none;
         }
 
         .action-panel {
@@ -118,20 +168,25 @@
         .input-group, .output-group {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
             flex: 1;
             width: 50%;
             position: relative;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
         }
         .drop-zone {
             position: relative;
-            border: 2px dashed #4CAF50;
-            border-radius: 8px;
-            padding: 25px;
+            border: 2px dashed var(--secondary-color);
+            border-radius: 10px;
+            padding: 30px 25px;
             text-align: center;
             transition: all 0.3s ease;
-            background-color: #f9fff9;
-            margin-bottom: 15px;
+            background-color: rgba(46, 204, 113, 0.05);
+            margin-bottom: 5px;
+            cursor: pointer;
         }
 
         .drop-zone.active {
@@ -141,17 +196,21 @@
 
         .file-label {
             display: inline-block;
-            padding: 8px 16px;
-            background-color: #4CAF50;
+            padding: 10px 20px;
+            background-color: var(--secondary-color);
             color: white;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            margin-top: 10px;
-            transition: background-color 0.2s;
+            margin-top: 15px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(46, 204, 113, 0.2);
         }
 
         .file-label:hover {
-            background-color: #45a049;
+            background-color: var(--secondary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(46, 204, 113, 0.3);
         }
 
         .file-input {
@@ -161,69 +220,181 @@
         textarea {
             width: 100%;
             min-height: 300px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-family: monospace;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
             resize: vertical;
+            line-height: 1.5;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        textarea::placeholder {
+            color: #aaa;
         }
         .controls {
             display: flex;
             gap: 20px;
             align-items: center;
             flex-wrap: wrap;
-            margin-bottom: 10px;
+            margin: 5px 0 15px;
+            padding: 15px;
+            background-color: rgba(52, 152, 219, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(52, 152, 219, 0.1);
         }
+
         .control-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            position: relative;
         }
-        input[type="number"] {
+
+        .control-item label {
+            font-weight: 500;
+            color: var(--light-text);
+            font-size: 14px;
+        }
+        input[type="number"], input[type="text"] {
             width: 80px;
-            padding: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        input[type="text"] {
+            width: 150px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 3px rgba(52, 152, 219, 0.1);
         }
         button {
-            padding: 8px 16px;
-            background-color: #4CAF50;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(52, 152, 219, 0.2);
         }
+
         button:hover {
-            background-color: #45a049;
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+
+        #split-button {
+            background-color: var(--primary-color);
+        }
+
+        #split-button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        #debug-button {
+            background-color: #95a5a6;
+        }
+
+        #debug-button:hover {
+            background-color: #7f8c8d;
         }
         .output-files {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 5px;
         }
+
+        .output-files:empty::before {
+            content: '分割结果将在这里显示';
+            color: #aaa;
+            text-align: center;
+            padding: 40px 0;
+            font-style: italic;
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+        }
+
         .file-item {
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
         }
+
+        .file-item:hover {
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+        }
+
         .file-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
-            font-weight: bold;
+            align-items: center;
+            margin-bottom: 12px;
+            font-weight: 500;
+            color: var(--primary-color);
         }
+
         .file-content {
             white-space: pre-wrap;
-            background-color: #f9f9f9;
-            padding: 10px;
-            border-radius: 4px;
+            background-color: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
             max-height: 200px;
             overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            border: 1px solid #eee;
         }
         .download-all {
             margin-top: 20px;
             align-self: center;
+            background-color: var(--secondary-color);
+            padding: 12px 25px;
+            font-size: 16px;
+        }
+
+        .download-all:hover {
+            background-color: var(--secondary-dark);
+        }
+
+        .download-link {
+            display: inline-block;
+            padding: 6px 12px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .download-link:hover {
+            background-color: var(--primary-dark);
         }
         .debug-info {
             margin-top: 10px;
@@ -462,31 +633,34 @@
 
         /* 响应式设计 */
         @media (max-width: 768px) {
+            body {
+                padding: 15px 10px;
+            }
+
+            h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
             .container {
                 flex-direction: column;
+                gap: 20px;
             }
 
             .input-group, .output-group {
                 width: 100%;
-                margin-bottom: 30px;
+                padding: 15px;
             }
 
-            .direction-controls {
-                top: auto;
-                left: 50%;
-                bottom: -15px;
-                transform: translateX(-50%);
-                z-index: 20;
-            }
-
-            .direction-controls:hover {
-                transform: translateX(-50%) scale(1.1);
+            textarea {
+                min-height: 250px;
             }
 
             .controls {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 15px;
+                padding: 12px;
             }
 
             .control-item {
@@ -497,22 +671,34 @@
                 width: 100%;
             }
 
-            .action-buttons {
-                flex-direction: column;
-                gap: 10px;
+            button {
+                width: 100%;
+                padding: 12px;
             }
 
-            .primary-button {
-                width: 100%;
+            .file-item {
+                padding: 12px;
+            }
+
+            .file-content {
+                max-height: 150px;
             }
         }
     </style>
 </head>
 <body>
-    <h1>Markdown文档分割工具</h1>
+    <header>
+        <h1>Markdown文档分割工具</h1>
+        <p class="subtitle">轻松分割长文档为多个小文件，智能分割点确保文档结构完整</p>
+    </header>
     <div class="container">
         <div class="input-group">
-            <h2>输入Markdown文本</h2>
+            <div class="panel-header">
+                <h2>输入Markdown文本</h2>
+                <div class="panel-actions">
+                    <button id="clear-input" class="small-button" title="清空输入区">清空</button>
+                </div>
+            </div>
             <div class="drop-zone" id="drop-zone">
                 <p>拖放Markdown文件到这里，或</p>
                 <label for="file-input" class="file-label">选择文件</label>
@@ -537,7 +723,12 @@
             </div>
         </div>
         <div class="output-group">
-            <h2>分割结果</h2>
+            <div class="panel-header">
+                <h2>分割结果</h2>
+                <div class="panel-actions">
+                    <button id="clear-output" class="small-button" title="清空结果区">清空</button>
+                </div>
+            </div>
             <div id="output-files" class="output-files"></div>
             <button id="download-all" class="download-all" style="display: none;">下载所有文件</button>
         </div>
@@ -810,6 +1001,18 @@
         function unhighlight() {
             dropZone.classList.remove('active');
         }
+
+        // 清空输入区按钮
+        document.getElementById('clear-input').addEventListener('click', () => {
+            document.getElementById('input-text').value = '';
+            document.getElementById('base-filename').value = '分割文档';
+        });
+
+        // 清空输出区按钮
+        document.getElementById('clear-output').addEventListener('click', () => {
+            document.getElementById('output-files').innerHTML = '';
+            document.getElementById('download-all').style.display = 'none';
+        });
 
         // 调试按钮事件监听器
         document.getElementById('debug-button').addEventListener('click', () => {
