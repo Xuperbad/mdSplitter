@@ -123,6 +123,41 @@
             width: 50%;
             position: relative;
         }
+        .drop-zone {
+            position: relative;
+            border: 2px dashed #4CAF50;
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background-color: #f9fff9;
+            margin-bottom: 15px;
+        }
+
+        .drop-zone.active {
+            background-color: rgba(76, 175, 80, 0.1);
+            border-color: #45a049;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.2s;
+        }
+
+        .file-label:hover {
+            background-color: #45a049;
+        }
+
+        .file-input {
+            display: none;
+        }
+
         textarea {
             width: 100%;
             min-height: 300px;
@@ -478,6 +513,11 @@
     <div class="container">
         <div class="input-group">
             <h2>输入Markdown文本</h2>
+            <div class="drop-zone" id="drop-zone">
+                <p>拖放Markdown文件到这里，或</p>
+                <label for="file-input" class="file-label">选择文件</label>
+                <input type="file" id="file-input" class="file-input" accept=".md,.markdown,text/markdown,text/plain">
+            </div>
             <textarea id="input-text" placeholder="在此粘贴您的Markdown文本..."></textarea>
             <div class="controls">
                 <div class="control-item">
@@ -701,30 +741,118 @@
             URL.revokeObjectURL(url);
         }
 
-        // 事件监听器
+        // 文件拖放和选择功能
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const inputText = document.getElementById('input-text');
+
+        // 阻止默认拖放行为
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // 处理拖放文件
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        // 处理文件选择
+        fileInput.addEventListener('change', function() {
+            handleFiles(this.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length) {
+                const file = files[0];
+                // 检查文件类型
+                if (file.type === 'text/markdown' || file.type === 'text/plain' || file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
+                    readFile(file);
+                } else {
+                    alert('请选择Markdown文件(.md或.markdown)或纯文本文件');
+                }
+            }
+        }
+
+        function readFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                inputText.value = e.target.result;
+                // 更新基础文件名为上传文件名（去除扩展名）
+                const fileName = file.name.replace(/\.[^/.]+$/, "");
+                document.getElementById('base-filename').value = fileName;
+            };
+            reader.readAsText(file);
+        }
+
+        // 拖放区域视觉反馈
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            dropZone.classList.add('active');
+        }
+
+        function unhighlight() {
+            dropZone.classList.remove('active');
+        }
+
+        // 调试按钮事件监听器
+        document.getElementById('debug-button').addEventListener('click', () => {
+            // 创建调试信息对话框
+            const debugInfo = {
+                'inputText': document.getElementById('input-text').value.length > 0 ? '有内容' : '无内容',
+                'targetSize': document.getElementById('target-size').value,
+                'rangeSize': document.getElementById('range-size').value,
+                'baseName': document.getElementById('base-filename').value,
+                'browserInfo': navigator.userAgent,
+                'screenSize': `${window.innerWidth}x${window.innerHeight}`,
+                'timestamp': new Date().toISOString()
+            };
+
+            // 显示调试信息
+            alert(JSON.stringify(debugInfo, null, 2));
+            console.log('Debug info:', debugInfo);
+        });
+
+        // 分割按钮事件监听器
         document.getElementById('split-button').addEventListener('click', () => {
-            const inputText = document.getElementById('input-text').value;
+            console.log('Split button clicked');
+            const markdownText = document.getElementById('input-text').value;
             const targetSize = parseInt(document.getElementById('target-size').value);
             const rangeSize = parseInt(document.getElementById('range-size').value);
             const baseName = document.getElementById('base-filename').value;
 
-            if (!inputText) {
+            if (!markdownText) {
                 alert('请输入Markdown文本');
                 return;
             }
 
-            // 切换箭头方向为右箭头，表示已完成分割
-            const arrow = document.querySelector('.direction-arrow');
-            arrow.textContent = '→'; // 右箭头
-            arrow.title = '单个文档分割为多个文档';
+            // 已移除箭头方向切换代码
 
             // 显示处理中的提示
             const outputFiles = document.getElementById('output-files');
             outputFiles.innerHTML = '<div style="text-align: center; padding: 20px;">正在分割文档...</div>';
 
             // 使用setTimeout来避免浏览器卡顿
+            console.log('Setting timeout for splitting process');
             setTimeout(() => {
-                const results = splitMarkdown(inputText, targetSize, rangeSize, baseName);
+                console.log('Starting splitting process');
+                const results = splitMarkdown(markdownText, targetSize, rangeSize, baseName);
                 outputFiles.innerHTML = '';
 
                 // 添加摘要信息
@@ -735,7 +863,7 @@
                 summaryDiv.style.borderRadius = '4px';
 
                 // 计算实际字符数（去除Markdown标记后）
-                const actualCharCount = countCharacters(inputText);
+                const actualCharCount = countCharacters(markdownText);
 
                 // 计算分割后的实际字符数总和
                 const totalSplitSize = results.reduce((sum, file) => sum + file.size, 0);
@@ -756,7 +884,7 @@
                 summaryDiv.innerHTML = `
                     <strong>分割结果摘要:</strong><br>
                     <span style="color: #555; font-size: 0.9em;">整个文档已被分割成多个小文件，每个文件字符数在目标范围内</span><br><br>
-                    原始总字符数: ${inputText.length}<br>
+                    原始总字符数: ${markdownText.length}<br>
                     有效字符数(去除Markdown标记): ${actualCharCount}<br>
                     <strong>分割后文件数: ${results.length}</strong><br>
                     每个文件的目标字符数范围: ${targetSize - rangeSize} - ${targetSize + rangeSize}<br>
@@ -793,6 +921,7 @@
                 const downloadAllButton = document.getElementById('download-all');
                 downloadAllButton.style.display = 'block';
                 downloadAllButton.onclick = () => createZipFile(results);
+                console.log('Splitting process completed successfully');
             }, 50); // 小延迟以确保界面能先更新
         });
     </script>
