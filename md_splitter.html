@@ -605,31 +605,9 @@
             background-color: rgba(231, 76, 60, 0.1);
         }
 
-        .drop-area {
-            border: 2px dashed var(--primary-color);
-            border-radius: 10px;
-            padding: 30px;
-            text-align: center;
-            background-color: rgba(52, 152, 219, 0.05);
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
 
-        .drop-area.active {
-            background-color: rgba(52, 152, 219, 0.1);
-            border-color: var(--primary-dark);
-        }
 
-        .drop-area-text {
-            color: var(--light-text);
-            margin-bottom: 15px;
-        }
 
-        .drop-area-icon {
-            font-size: 40px;
-            color: var(--primary-color);
-            margin-bottom: 15px;
-        }
 
         .merge-result {
             margin-bottom: 10px;
@@ -1010,7 +988,7 @@
                     </div>
                 </div>
 
-                <div class="drop-area" id="merge-drop-zone">
+                <div class="drop-zone" id="merge-drop-zone">
                     <label for="merge-file-input" class="file-label">选择文件</label>
                     <input type="file" id="merge-file-input" class="file-input" accept=".md,.markdown,text/markdown,text/plain" multiple>
                 </div>
@@ -1515,15 +1493,11 @@
 
                 // 拖放区域视觉反馈
                 ['dragenter', 'dragover'].forEach(eventName => {
-                    mergeDropZone.addEventListener(eventName, () => {
-                        mergeDropZone.classList.add('active');
-                    }, false);
+                    mergeDropZone.addEventListener(eventName, highlight, false);
                 });
 
                 ['dragleave', 'drop'].forEach(eventName => {
-                    mergeDropZone.addEventListener(eventName, () => {
-                        mergeDropZone.classList.remove('active');
-                    }, false);
+                    mergeDropZone.addEventListener(eventName, unhighlight, false);
                 });
 
                 // 处理拖放文件
