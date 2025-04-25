@@ -85,9 +85,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 12px;
+            padding-bottom: 10px;
             border-bottom: 1px solid var(--border-color);
-            margin-bottom: 15px;
+            margin-bottom: 10px;
+            height: 40px;
         }
 
         .panel-header h2 {
@@ -160,28 +161,29 @@
         .input-group, .output-group {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
             width: 45%;
             min-width: 400px;
+            max-width: 500px;
             position: relative;
             background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: var(--shadow);
-            height: 600px;
-            overflow: hidden;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            min-height: 600px;
+            overflow: visible;
         }
         .drop-zone {
             position: relative;
             border: 1px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
+            border-radius: 6px;
+            padding: 0;
             text-align: center;
             transition: all 0.3s ease;
             background-color: rgba(0, 0, 0, 0.01);
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             cursor: pointer;
-            height: 80px;
+            height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -199,7 +201,7 @@
             color: white;
             border-radius: 6px;
             cursor: pointer;
-            margin-top: 15px;
+            margin-top: 0px;
             transition: all 0.2s ease;
             font-weight: 500;
             box-shadow: 0 2px 5px rgba(46, 204, 113, 0.2);
@@ -217,10 +219,10 @@
 
         textarea {
             width: 100%;
-            height: 300px;
-            padding: 15px;
+            height: auto;
+            padding: 10px;
             border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 6px;
             font-family: 'Consolas', 'Monaco', monospace;
             resize: none;
             line-height: 1.5;
@@ -228,6 +230,7 @@
             transition: all 0.2s ease;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
             flex: 1;
+            overflow-y: auto;
         }
 
         textarea:focus {
@@ -241,15 +244,16 @@
         }
         .controls {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
             flex-wrap: wrap;
             margin: 0;
-            padding: 12px 15px;
+            padding: 10px;
             background-color: rgba(0, 0, 0, 0.02);
-            border-radius: 8px;
+            border-radius: 6px;
             border: 1px solid var(--border-color);
-            height: 80px;
+            min-height: 60px;
+            overflow: visible;
         }
 
         .control-item {
@@ -320,29 +324,33 @@
         .output-files {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            height: 400px;
+            gap: 10px;
+            height: 370px;
             overflow-y: auto;
             padding-right: 5px;
             flex: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            background-color: white;
         }
 
         .output-files:empty::before {
             content: '分割结果将在这里显示';
             color: #aaa;
             text-align: center;
-            padding: 40px 0;
+            padding: 150px 0;
             font-style: italic;
-            border: 1px dashed var(--border-color);
-            border-radius: 8px;
+            display: block;
+            width: 100%;
         }
 
         .file-item {
             border: 1px solid var(--border-color);
-            padding: 15px;
-            border-radius: 8px;
+            padding: 10px;
+            border-radius: 6px;
             background-color: white;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
             transition: all 0.2s ease;
         }
 
@@ -362,14 +370,15 @@
         .file-content {
             white-space: pre-wrap;
             background-color: #f8f9fa;
-            padding: 12px;
-            border-radius: 6px;
-            max-height: 200px;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 150px;
             overflow-y: auto;
             font-family: 'Consolas', 'Monaco', monospace;
             font-size: 13px;
             line-height: 1.5;
             border: 1px solid #eee;
+            word-break: break-word;
         }
         .download-all {
             margin-top: 20px;
@@ -405,24 +414,20 @@
 
         /* 文档拼合页面样式 */
         .merge-files-container {
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            background-color: rgba(52, 152, 219, 0.03);
-            box-shadow: var(--shadow);
             display: flex;
             flex-direction: column;
             flex: 1;
+            margin-bottom: 10px;
         }
 
         .file-list-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             font-weight: 500;
             color: var(--primary-color);
+            height: 30px;
         }
 
         .file-list-actions {
@@ -463,10 +468,12 @@
         }
 
         .output-textarea {
-            border-color: var(--primary-color);
-            background-color: rgba(52, 152, 219, 0.03);
-            height: 400px;
+            border: 1px solid var(--border-color);
+            background-color: white;
+            height: 370px;
             flex: 1;
+            padding: 10px;
+            border-radius: 6px;
         }
 
         .output-textarea.active-drop {
@@ -524,23 +531,27 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            height: 300px;
+            height: 370px;
             overflow-y: auto;
-            padding-right: 5px;
+            padding: 10px;
             flex: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: white;
         }
 
         .file-item-draggable {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 15px;
+            padding: 10px;
             background-color: white;
             border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: move;
             transition: all 0.2s ease;
             position: relative;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
         }
 
         .file-item-draggable:before {
@@ -621,12 +632,14 @@
         }
 
         .merge-result {
-            margin-bottom: 15px;
-            padding: 15px;
-            border-radius: 8px;
-            background-color: #f0f8ff;
-            border-left: 4px solid var(--primary-color);
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: rgba(52, 152, 219, 0.05);
+            border: 1px solid var(--border-color);
             display: none;
+            height: 60px;
+            overflow: hidden;
         }
 
         .merge-result-title {
@@ -885,6 +898,8 @@
             .input-group, .output-group {
                 width: 100%;
                 padding: 15px;
+                min-height: 600px;
+                overflow: visible;
             }
 
             textarea {
@@ -896,6 +911,9 @@
                 align-items: flex-start;
                 gap: 15px;
                 padding: 12px;
+                height: auto;
+                min-height: 60px;
+                overflow: visible;
             }
 
             .control-item {
@@ -969,7 +987,9 @@
                 </div>
             </div>
             <div id="output-files" class="output-files"></div>
-            <button id="download-all" class="download-all" style="display: none;">下载所有文件</button>
+            <div style="height: 60px; display: flex; align-items: center; justify-content: center;">
+                <button id="download-all" class="download-all" style="display: none;">下载所有文件</button>
+            </div>
         </div>
             </div>
             <div class="center-button-container">
