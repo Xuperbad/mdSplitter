@@ -402,51 +402,57 @@
             color: #666;
         }
 
-        /* 多文件合并区域样式 */
+        /* 文档拼合页面样式 */
         .merge-files-container {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            background-color: #f9f9f9;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: rgba(52, 152, 219, 0.03);
+            box-shadow: var(--shadow);
         }
 
         .file-list-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             font-weight: 500;
+            color: var(--primary-color);
         }
 
         .file-list-tip {
-            font-size: 12px;
-            color: #666;
+            font-size: 13px;
+            color: var(--light-text);
             font-style: italic;
             font-weight: normal;
         }
 
         .output-textarea {
-            border-color: #2196F3;
-            background-color: #E3F2FD;
+            border-color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.03);
         }
 
         .output-textarea.active-drop {
-            border-color: #2196F3;
-            background-color: rgba(33, 150, 243, 0.1);
-            border-width: 3px;
+            border-color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.1);
+            border-width: 2px;
         }
 
         .merge-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .merge-header h3 {
             margin: 0;
-            color: #2e7d32;
+            color: var(--primary-color);
+            font-weight: 500;
+            font-size: 18px;
         }
 
         .merge-actions {
@@ -455,46 +461,160 @@
         }
 
         .merge-button {
-            background-color: #2196F3;
+            background-color: var(--primary-color);
         }
 
         .merge-button:hover {
-            background-color: #1976D2;
+            background-color: var(--primary-dark);
         }
 
         .clear-button {
-            background-color: #f44336;
+            background-color: #e74c3c;
         }
 
         .clear-button:hover {
-            background-color: #d32f2f;
+            background-color: #c0392b;
         }
 
         .merge-tip {
             font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
+            color: var(--light-text);
+            margin-bottom: 15px;
             font-style: italic;
+            line-height: 1.5;
         }
 
         .file-list {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
             max-height: 300px;
             overflow-y: auto;
+            padding-right: 5px;
         }
 
         .file-item-draggable {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 15px;
+            padding: 12px 15px;
             background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             cursor: move;
             transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .file-item-draggable:before {
+            content: '≡';
+            position: absolute;
+            left: 8px;
+            color: #aaa;
+            font-size: 16px;
+        }
+
+        .file-item-draggable .file-name {
+            margin-left: 20px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 70%;
+        }
+
+        .file-item-draggable .file-size {
+            font-size: 12px;
+            color: var(--light-text);
+        }
+
+        .file-item-draggable .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .file-action-button {
+            background: none;
+            border: none;
+            color: var(--light-text);
+            cursor: pointer;
+            padding: 3px 8px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-size: 13px;
+        }
+
+        .file-action-button:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: var(--text-color);
+        }
+
+        .file-action-button.remove {
+            color: #e74c3c;
+        }
+
+        .file-action-button.remove:hover {
+            background-color: rgba(231, 76, 60, 0.1);
+        }
+
+        .drop-area {
+            border: 2px dashed var(--primary-color);
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            background-color: rgba(52, 152, 219, 0.05);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .drop-area.active {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-color: var(--primary-dark);
+        }
+
+        .drop-area-text {
+            color: var(--light-text);
+            margin-bottom: 15px;
+        }
+
+        .drop-area-icon {
+            font-size: 40px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .merge-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f0f8ff;
+            border-left: 4px solid var(--primary-color);
+            display: none;
+        }
+
+        .merge-result-title {
+            font-weight: 500;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .merge-result-title:before {
+            content: '✓';
+            font-size: 18px;
+        }
+
+        .merge-result-stats {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .merge-result-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
         }
 
         .file-item-draggable:hover {
@@ -631,6 +751,50 @@
             line-height: 1.4;
         }
 
+        /* 导航栏样式 */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .nav-tab {
+            padding: 10px 20px;
+            background-color: #f1f1f1;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--light-text);
+            transition: all 0.2s ease;
+        }
+
+        .nav-tab:hover {
+            background-color: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        .nav-tab.active {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 2px 5px rgba(52, 152, 219, 0.2);
+        }
+
+        .page-subtitle {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .page-container {
+            display: none;
+        }
+
+        .page-container.active {
+            display: block;
+        }
+
         /* 响应式设计 */
         @media (max-width: 768px) {
             body {
@@ -688,10 +852,24 @@
 </head>
 <body>
     <header>
-        <h1>Markdown文档分割工具</h1>
-        <p class="subtitle">轻松分割长文档为多个小文件，智能分割点确保文档结构完整</p>
+        <h1>Markdown文档工具箱</h1>
+        <div class="nav-tabs">
+            <button class="nav-tab active" id="split-tab">文档分割</button>
+            <button class="nav-tab" id="merge-tab">文档拼合</button>
+        </div>
     </header>
-    <div class="container">
+
+    <div class="page-subtitle" id="split-subtitle">
+        <p class="subtitle">轻松分割长文档为多个小文件，智能分割点确保文档结构完整</p>
+    </div>
+
+    <div class="page-subtitle" id="merge-subtitle" style="display: none;">
+        <p class="subtitle">将多个小文档拼合成一个完整文档，支持自定义拼合顺序</p>
+    </div>
+
+    <!-- 分割页面 -->
+    <div class="page-container active" id="split-page">
+        <div class="container">
         <div class="input-group">
             <div class="panel-header">
                 <h2>输入Markdown文本</h2>
@@ -731,6 +909,62 @@
             </div>
             <div id="output-files" class="output-files"></div>
             <button id="download-all" class="download-all" style="display: none;">下载所有文件</button>
+        </div>
+    </div>
+    </div>
+
+    <!-- 拼合页面 -->
+    <div class="page-container" id="merge-page">
+        <div class="container">
+            <div class="input-group">
+                <div class="panel-header">
+                    <h2>添加Markdown文件</h2>
+                    <div class="panel-actions">
+                        <button id="clear-merge-input" class="small-button" title="清空文件列表">清空</button>
+                    </div>
+                </div>
+
+                <div class="drop-area" id="merge-drop-zone">
+                    <div class="drop-area-icon">📄</div>
+                    <p class="drop-area-text">拖放Markdown文件到这里，或</p>
+                    <label for="merge-file-input" class="file-label">选择文件</label>
+                    <input type="file" id="merge-file-input" class="file-input" accept=".md,.markdown,text/markdown,text/plain" multiple>
+                </div>
+
+                <div class="merge-files-container">
+                    <div class="file-list-header">
+                        <span>文件列表</span>
+                        <span class="file-list-tip">拖动文件可调整顺序</span>
+                    </div>
+                    <div class="file-list" id="merge-file-list"></div>
+                </div>
+
+                <div class="merge-tip">
+                    添加多个Markdown文件，调整顺序后点击"拼合文档"按钮将它们合并为一个文档。
+                </div>
+
+                <button id="merge-button" class="merge-button">拼合文档</button>
+            </div>
+
+            <div class="output-group">
+                <div class="panel-header">
+                    <h2>拼合结果</h2>
+                    <div class="panel-actions">
+                        <button id="clear-merge-output" class="small-button" title="清空结果">清空</button>
+                    </div>
+                </div>
+
+                <div class="merge-result" id="merge-result">
+                    <div class="merge-result-title">拼合完成</div>
+                    <div class="merge-result-stats" id="merge-result-stats"></div>
+                    <div class="merge-result-actions">
+                        <button id="copy-merged" class="merge-button">复制到剪贴板</button>
+                        <button id="download-merged" class="merge-button">下载文件</button>
+                    </div>
+                </div>
+
+                <textarea id="merged-text" class="output-textarea" placeholder="拼合结果将显示在这里..." readonly></textarea>
+            </div>
         </div>
     </div>
 
@@ -1131,5 +1365,271 @@
 
     <!-- 添加JSZip库用于批量下载 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js" defer></script>
+
+    <script>
+        // 页面切换功能
+        document.addEventListener('DOMContentLoaded', () => {
+            const splitTab = document.getElementById('split-tab');
+            const mergeTab = document.getElementById('merge-tab');
+            const splitPage = document.getElementById('split-page');
+            const mergePage = document.getElementById('merge-page');
+            const splitSubtitle = document.getElementById('split-subtitle');
+            const mergeSubtitle = document.getElementById('merge-subtitle');
+
+            // 切换到分割页面
+            splitTab.addEventListener('click', () => {
+                splitTab.classList.add('active');
+                mergeTab.classList.remove('active');
+                splitPage.classList.add('active');
+                mergePage.classList.remove('active');
+                splitSubtitle.style.display = 'block';
+                mergeSubtitle.style.display = 'none';
+            });
+
+            // 切换到拼合页面
+            mergeTab.addEventListener('click', () => {
+                mergeTab.classList.add('active');
+                splitTab.classList.remove('active');
+                mergePage.classList.add('active');
+                splitPage.classList.remove('active');
+                mergeSubtitle.style.display = 'block';
+                splitSubtitle.style.display = 'none';
+            });
+
+            // 初始化拼合页面的拖放排序功能
+            const fileList = document.getElementById('merge-file-list');
+            if (fileList) {
+                new Sortable(fileList, {
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    onEnd: function() {
+                        console.log('Order changed');
+                    }
+                });
+            }
+
+            // 拼合页面的拖放区域
+            const mergeDropZone = document.getElementById('merge-drop-zone');
+            const mergeFileInput = document.getElementById('merge-file-input');
+
+            if (mergeDropZone && mergeFileInput) {
+                // 阻止默认拖放行为
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    mergeDropZone.addEventListener(eventName, preventDefaults, false);
+                    document.body.addEventListener(eventName, preventDefaults, false);
+                });
+
+                // 拖放区域视觉反馈
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    mergeDropZone.addEventListener(eventName, () => {
+                        mergeDropZone.classList.add('active');
+                    }, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    mergeDropZone.addEventListener(eventName, () => {
+                        mergeDropZone.classList.remove('active');
+                    }, false);
+                });
+
+                // 处理拖放文件
+                mergeDropZone.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    handleMergeFiles(files);
+                }, false);
+
+                // 处理文件选择
+                mergeFileInput.addEventListener('change', function() {
+                    handleMergeFiles(this.files);
+                });
+
+                // 清空文件列表按钮
+                document.getElementById('clear-merge-input').addEventListener('click', () => {
+                    document.getElementById('merge-file-list').innerHTML = '';
+                    mergeFiles = [];
+                });
+
+                // 清空拼合结果按钮
+                document.getElementById('clear-merge-output').addEventListener('click', () => {
+                    document.getElementById('merged-text').value = '';
+                    document.getElementById('merge-result').style.display = 'none';
+                });
+
+                // 拼合按钮
+                document.getElementById('merge-button').addEventListener('click', mergeDocuments);
+
+                // 复制到剪贴板按钮
+                document.getElementById('copy-merged').addEventListener('click', () => {
+                    const mergedText = document.getElementById('merged-text');
+                    mergedText.select();
+                    document.execCommand('copy');
+                    alert('已复制到剪贴板');
+                });
+
+                // 下载拼合文件按钮
+                document.getElementById('download-merged').addEventListener('click', () => {
+                    const mergedText = document.getElementById('merged-text').value;
+                    if (mergedText) {
+                        const blob = new Blob([mergedText], { type: 'text/markdown' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'merged_document.md';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    }
+                });
+            }
+
+            // 存储拼合文件的数组
+            let mergeFiles = [];
+
+            // 处理拼合文件
+            function handleMergeFiles(files) {
+                if (files.length) {
+                    Array.from(files).forEach(file => {
+                        // 检查文件类型
+                        if (file.type === 'text/markdown' || file.type === 'text/plain' ||
+                            file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
+                            readMergeFile(file);
+                        } else {
+                            alert('请选择Markdown文件(.md或.markdown)或纯文本文件');
+                        }
+                    });
+                }
+            }
+
+            // 读取拼合文件
+            function readMergeFile(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const fileContent = e.target.result;
+                    const fileSize = fileContent.length;
+
+                    // 检查是否已经添加过相同的文件
+                    const isDuplicate = mergeFiles.some(f => f.name === file.name && f.content === fileContent);
+                    if (isDuplicate) {
+                        alert(`文件 "${file.name}" 已经添加过了`);
+                        return;
+                    }
+
+                    // 添加到文件数组
+                    mergeFiles.push({
+                        name: file.name,
+                        content: fileContent,
+                        size: fileSize
+                    });
+
+                    // 更新文件列表UI
+                    updateMergeFileList();
+                };
+                reader.readAsText(file);
+            }
+
+            // 更新拼合文件列表
+            function updateMergeFileList() {
+                const fileList = document.getElementById('merge-file-list');
+                fileList.innerHTML = '';
+
+                mergeFiles.forEach((file, index) => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item-draggable';
+                    fileItem.dataset.index = index;
+
+                    const fileName = document.createElement('div');
+                    fileName.className = 'file-name';
+                    fileName.textContent = file.name;
+
+                    const fileSize = document.createElement('div');
+                    fileSize.className = 'file-size';
+                    fileSize.textContent = `${file.size} 字符`;
+
+                    const fileActions = document.createElement('div');
+                    fileActions.className = 'file-actions';
+
+                    const removeButton = document.createElement('button');
+                    removeButton.className = 'file-action-button remove';
+                    removeButton.textContent = '删除';
+                    removeButton.onclick = () => removeFile(index);
+
+                    const previewButton = document.createElement('button');
+                    previewButton.className = 'file-action-button';
+                    previewButton.textContent = '预览';
+                    previewButton.onclick = () => previewFile(index);
+
+                    fileActions.appendChild(previewButton);
+                    fileActions.appendChild(removeButton);
+
+                    fileItem.appendChild(fileName);
+                    fileItem.appendChild(fileSize);
+                    fileItem.appendChild(fileActions);
+
+                    fileList.appendChild(fileItem);
+                });
+            }
+
+            // 删除文件
+            function removeFile(index) {
+                mergeFiles.splice(index, 1);
+                updateMergeFileList();
+            }
+
+            // 预览文件
+            function previewFile(index) {
+                const file = mergeFiles[index];
+                const previewContent = file.content.length > 1000
+                    ? file.content.substring(0, 1000) + '...'
+                    : file.content;
+
+                alert(`文件名: ${file.name}\n大小: ${file.size} 字符\n\n${previewContent}`);
+            }
+
+            // 拼合文档
+            function mergeDocuments() {
+                if (mergeFiles.length === 0) {
+                    alert('请先添加文件');
+                    return;
+                }
+
+                // 获取当前排序后的文件索引
+                const fileItems = document.querySelectorAll('.file-item-draggable');
+                const orderedFiles = Array.from(fileItems).map(item => {
+                    const index = parseInt(item.dataset.index);
+                    return mergeFiles[index];
+                });
+
+                // 拼合文件内容
+                let mergedContent = '';
+                let totalSize = 0;
+
+                orderedFiles.forEach((file, index) => {
+                    // 如果不是第一个文件，添加分隔符
+                    if (index > 0) {
+                        mergedContent += '\n\n---\n\n';
+                    }
+
+                    // 添加文件内容
+                    mergedContent += file.content;
+                    totalSize += file.size;
+                });
+
+                // 显示拼合结果
+                document.getElementById('merged-text').value = mergedContent;
+
+                // 更新结果统计
+                const statsElement = document.getElementById('merge-result-stats');
+                statsElement.innerHTML = `
+                    <p>已成功拼合 ${orderedFiles.length} 个文件</p>
+                    <p>总字符数: ${mergedContent.length}</p>
+                    <p>有效字符数: ${countCharacters(mergedContent)}</p>
+                `;
+
+                // 显示结果区域
+                document.getElementById('merge-result').style.display = 'block';
+            }
+        });
+    </script>
 </body>
 </html>
