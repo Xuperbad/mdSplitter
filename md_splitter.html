@@ -1259,8 +1259,11 @@
             e.stopPropagation();
         }
 
-        // 处理拖放文件
+        // 处理拖放文件 - 在选择文件区域
         dropZone.addEventListener('drop', handleDrop, false);
+
+        // 处理拖放文件 - 在整个分割页面
+        document.getElementById('split-page').addEventListener('drop', handleDrop, false);
 
         function handleDrop(e) {
             const dt = e.dataTransfer;
@@ -1299,10 +1302,18 @@
         // 拖放区域视觉反馈
         ['dragenter', 'dragover'].forEach(eventName => {
             dropZone.addEventListener(eventName, highlight, false);
+            // 整个分割页面也添加视觉反馈
+            document.getElementById('split-page').addEventListener(eventName, () => {
+                dropZone.classList.add('active');
+            }, false);
         });
 
         ['dragleave', 'drop'].forEach(eventName => {
             dropZone.addEventListener(eventName, unhighlight, false);
+            // 整个分割页面也添加视觉反馈
+            document.getElementById('split-page').addEventListener(eventName, () => {
+                dropZone.classList.remove('active');
+            }, false);
         });
 
         function highlight() {
@@ -1500,14 +1511,29 @@
                 // 拖放区域视觉反馈
                 ['dragenter', 'dragover'].forEach(eventName => {
                     mergeDropZone.addEventListener(eventName, highlight, false);
+                    // 整个拼合页面也添加视觉反馈
+                    document.getElementById('merge-page').addEventListener(eventName, () => {
+                        mergeDropZone.classList.add('active');
+                    }, false);
                 });
 
                 ['dragleave', 'drop'].forEach(eventName => {
                     mergeDropZone.addEventListener(eventName, unhighlight, false);
+                    // 整个拼合页面也添加视觉反馈
+                    document.getElementById('merge-page').addEventListener(eventName, () => {
+                        mergeDropZone.classList.remove('active');
+                    }, false);
                 });
 
-                // 处理拖放文件
+                // 处理拖放文件 - 在选择文件区域
                 mergeDropZone.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    handleMergeFiles(files);
+                }, false);
+
+                // 处理拖放文件 - 在整个拼合页面
+                document.getElementById('merge-page').addEventListener('drop', (e) => {
                     const dt = e.dataTransfer;
                     const files = dt.files;
                     handleMergeFiles(files);
