@@ -421,6 +421,36 @@
             color: var(--primary-color);
         }
 
+        .file-list-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .sort-options {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--light-text);
+        }
+
+        .sort-select {
+            padding: 4px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 13px;
+            background-color: white;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        .sort-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+        }
+
         .file-list-tip {
             font-size: 13px;
             color: var(--light-text);
@@ -934,7 +964,18 @@
                 <div class="merge-files-container">
                     <div class="file-list-header">
                         <span>文件列表</span>
-                        <span class="file-list-tip">拖动文件可调整顺序</span>
+                        <div class="file-list-actions">
+                            <div class="sort-options">
+                                <label for="sort-method">排序方式:</label>
+                                <select id="sort-method" class="sort-select">
+                                    <option value="natural">自然排序</option>
+                                    <option value="alpha">字母顺序</option>
+                                    <option value="numeric">数字顺序</option>
+                                    <option value="time">添加时间</option>
+                                </select>
+                            </div>
+                            <span class="file-list-tip">拖动文件可调整顺序</span>
+                        </div>
                     </div>
                     <div class="file-list" id="merge-file-list"></div>
                 </div>
@@ -1489,17 +1530,119 @@
             // 处理拼合文件
             function handleMergeFiles(files) {
                 if (files.length) {
+                    // 创建一个计数器来跟踪已处理的文件数量
+                    let processedCount = 0;
+                    const totalFiles = files.length;
+
                     Array.from(files).forEach(file => {
                         // 检查文件类型
                         if (file.type === 'text/markdown' || file.type === 'text/plain' ||
                             file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
-                            readMergeFile(file);
+
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const fileContent = e.target.result;
+                                const fileSize = fileContent.length;
+
+                                // 检查是否已经添加过相同的文件
+                                const isDuplicate = mergeFiles.some(f => f.name === file.name && f.content === fileContent);
+                                if (!isDuplicate) {
+                                    // 添加到文件数组
+                                    mergeFiles.push({
+                                        name: file.name,
+                                        content: fileContent,
+                                        size: fileSize
+                                    });
+                                }
+
+                                // 增加计数器
+                                processedCount++;
+
+                                // 如果所有文件都已处理完毕，则排序并更新UI
+                                if (processedCount === totalFiles) {
+                                    // 按文件名排序
+                                    sortMergeFiles();
+                                    // 更新文件列表UI
+                                    updateMergeFileList();
+                                }
+                            };
+                            reader.readAsText(file);
                         } else {
                             alert('请选择Markdown文件(.md或.markdown)或纯文本文件');
+                            processedCount++;
                         }
                     });
                 }
             }
+
+            // 按文件名排序
+            function sortMergeFiles() {
+                const sortMethod = document.getElementById('sort-method').value;
+
+                // 为每个文件添加时间戳（如果没有）
+                mergeFiles.forEach(file => {
+                    if (!file.timestamp) {
+                        file.timestamp = Date.now();
+                    }
+                });
+
+                switch (sortMethod) {
+                    case 'natural':
+                        // 自然排序（尝试智能地处理数字和文本）
+                        mergeFiles.sort((a, b) => {
+                            // 提取文件名中的数字部分（如果有）
+                            const aMatch = a.name.match(/(\d+)/);
+                            const bMatch = b.name.match(/(\d+)/);
+
+                            // 如果两个文件名都包含数字，按数字大小排序
+                            if (aMatch && bMatch) {
+                                const aNum = parseInt(aMatch[0]);
+                                const bNum = parseInt(bMatch[0]);
+                                if (aNum !== bNum) {
+                                    return aNum - bNum;
+                                }
+                            }
+
+                            // 否则按字母顺序排序
+                            return a.name.localeCompare(b.name);
+                        });
+                        break;
+
+                    case 'alpha':
+                        // 纯字母顺序
+                        mergeFiles.sort((a, b) => a.name.localeCompare(b.name));
+                        break;
+
+                    case 'numeric':
+                        // 尝试提取数字并按数字排序
+                        mergeFiles.sort((a, b) => {
+                            const aMatch = a.name.match(/(\d+)/);
+                            const bMatch = b.name.match(/(\d+)/);
+
+                            if (aMatch && bMatch) {
+                                return parseInt(aMatch[0]) - parseInt(bMatch[0]);
+                            } else if (aMatch) {
+                                return -1; // 有数字的排在前面
+                            } else if (bMatch) {
+                                return 1;
+                            } else {
+                                return a.name.localeCompare(b.name);
+                            }
+                        });
+                        break;
+
+                    case 'time':
+                        // 按添加时间排序
+                        mergeFiles.sort((a, b) => a.timestamp - b.timestamp);
+                        break;
+                }
+            }
+
+            // 监听排序方式变化
+            document.getElementById('sort-method').addEventListener('change', () => {
+                sortMergeFiles();
+                updateMergeFileList();
+            });
 
             // 读取拼合文件
             function readMergeFile(file) {
@@ -1521,6 +1664,9 @@
                         content: fileContent,
                         size: fileSize
                     });
+
+                    // 按文件名排序
+                    sortMergeFiles();
 
                     // 更新文件列表UI
                     updateMergeFileList();
