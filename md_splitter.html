@@ -28,7 +28,7 @@
             font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 30px 20px;
+            padding: 20px;
             line-height: 1.6;
             color: var(--text-color);
             background-color: var(--bg-color);
@@ -36,28 +36,17 @@
 
         header {
             text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h1 {
-            text-align: center;
-            color: var(--primary-color);
-            font-weight: 500;
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: var(--light-text);
-            font-size: 16px;
-            max-width: 600px;
-            margin: 0 auto;
+            margin-bottom: 20px;
         }
         .container {
             display: flex;
             flex-direction: row;
             gap: 30px;
             margin-top: 20px;
+            position: relative;
+        }
+
+        .container-with-center-button {
             position: relative;
         }
 
@@ -179,19 +168,19 @@
         }
         .drop-zone {
             position: relative;
-            border: 2px dashed var(--secondary-color);
-            border-radius: 10px;
-            padding: 30px 25px;
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
             text-align: center;
             transition: all 0.3s ease;
-            background-color: rgba(46, 204, 113, 0.05);
-            margin-bottom: 5px;
+            background-color: rgba(0, 0, 0, 0.01);
+            margin-bottom: 15px;
             cursor: pointer;
         }
 
         .drop-zone.active {
-            background-color: rgba(76, 175, 80, 0.1);
-            border-color: #45a049;
+            background-color: rgba(52, 152, 219, 0.05);
+            border-color: var(--primary-color);
         }
 
         .file-label {
@@ -242,14 +231,14 @@
         }
         .controls {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             align-items: center;
             flex-wrap: wrap;
             margin: 5px 0 15px;
-            padding: 15px;
-            background-color: rgba(52, 152, 219, 0.05);
+            padding: 12px 15px;
+            background-color: rgba(0, 0, 0, 0.02);
             border-radius: 8px;
-            border: 1px solid rgba(52, 152, 219, 0.1);
+            border: 1px solid var(--border-color);
         }
 
         .control-item {
@@ -785,17 +774,17 @@
         .nav-tabs {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin: 20px 0;
+            gap: 15px;
+            margin: 0 0 20px;
         }
 
         .nav-tab {
-            padding: 10px 20px;
+            padding: 8px 20px;
             background-color: #f1f1f1;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 500;
             color: var(--light-text);
             transition: all 0.2s ease;
@@ -803,18 +792,12 @@
 
         .nav-tab:hover {
             background-color: #e0e0e0;
-            transform: translateY(-2px);
         }
 
         .nav-tab.active {
             background-color: var(--primary-color);
             color: white;
-            box-shadow: 0 2px 5px rgba(52, 152, 219, 0.2);
-        }
-
-        .page-subtitle {
-            text-align: center;
-            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(52, 152, 219, 0.2);
         }
 
         .page-container {
@@ -823,6 +806,46 @@
 
         .page-container.active {
             display: block;
+        }
+
+        /* 中间按钮区域 */
+        .center-button-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .center-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .center-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .center-button.secondary {
+            background-color: #f1f1f1;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
         }
 
         /* 响应式设计 */
@@ -882,33 +905,24 @@
 </head>
 <body>
     <header>
-        <h1>Markdown文档工具箱</h1>
         <div class="nav-tabs">
             <button class="nav-tab active" id="split-tab">文档分割</button>
             <button class="nav-tab" id="merge-tab">文档拼合</button>
         </div>
     </header>
 
-    <div class="page-subtitle" id="split-subtitle">
-        <p class="subtitle">轻松分割长文档为多个小文件，智能分割点确保文档结构完整</p>
-    </div>
-
-    <div class="page-subtitle" id="merge-subtitle" style="display: none;">
-        <p class="subtitle">将多个小文档拼合成一个完整文档，支持自定义拼合顺序</p>
-    </div>
-
     <!-- 分割页面 -->
     <div class="page-container active" id="split-page">
-        <div class="container">
+        <div class="container-with-center-button">
+            <div class="container">
         <div class="input-group">
             <div class="panel-header">
-                <h2>输入Markdown文本</h2>
+                <h2>输入</h2>
                 <div class="panel-actions">
                     <button id="clear-input" class="small-button" title="清空输入区">清空</button>
                 </div>
             </div>
             <div class="drop-zone" id="drop-zone">
-                <p>拖放Markdown文件到这里，或</p>
                 <label for="file-input" class="file-label">选择文件</label>
                 <input type="file" id="file-input" class="file-input" accept=".md,.markdown,text/markdown,text/plain">
             </div>
@@ -926,13 +940,12 @@
                     <label for="base-filename">基础文件名:</label>
                     <input type="text" id="base-filename" value="分割文档" style="width: 150px;">
                 </div>
-                <button id="split-button">分割文档</button>
-                <button id="debug-button" style="background-color: #607D8B;">显示调试信息</button>
+                <button id="debug-button" style="background-color: #607D8B; display: none;">显示调试信息</button>
             </div>
         </div>
         <div class="output-group">
             <div class="panel-header">
-                <h2>分割结果</h2>
+                <h2>输出</h2>
                 <div class="panel-actions">
                     <button id="clear-output" class="small-button" title="清空结果区">清空</button>
                 </div>
@@ -940,23 +953,26 @@
             <div id="output-files" class="output-files"></div>
             <button id="download-all" class="download-all" style="display: none;">下载所有文件</button>
         </div>
-    </div>
+            </div>
+            <div class="center-button-container">
+                <button id="split-button-center" class="center-button">→</button>
+            </div>
+        </div>
     </div>
 
     <!-- 拼合页面 -->
     <div class="page-container" id="merge-page">
-        <div class="container">
+        <div class="container-with-center-button">
+            <div class="container">
             <div class="input-group">
                 <div class="panel-header">
-                    <h2>添加Markdown文件</h2>
+                    <h2>输入</h2>
                     <div class="panel-actions">
                         <button id="clear-merge-input" class="small-button" title="清空文件列表">清空</button>
                     </div>
                 </div>
 
                 <div class="drop-area" id="merge-drop-zone">
-                    <div class="drop-area-icon">📄</div>
-                    <p class="drop-area-text">拖放Markdown文件到这里，或</p>
                     <label for="merge-file-input" class="file-label">选择文件</label>
                     <input type="file" id="merge-file-input" class="file-input" accept=".md,.markdown,text/markdown,text/plain" multiple>
                 </div>
@@ -966,7 +982,6 @@
                         <span>文件列表</span>
                         <div class="file-list-actions">
                             <div class="sort-options">
-                                <label for="sort-method">排序方式:</label>
                                 <select id="sort-method" class="sort-select">
                                     <option value="natural">自然排序</option>
                                     <option value="alpha">字母顺序</option>
@@ -974,22 +989,17 @@
                                     <option value="time">添加时间</option>
                                 </select>
                             </div>
-                            <span class="file-list-tip">拖动文件可调整顺序</span>
                         </div>
                     </div>
                     <div class="file-list" id="merge-file-list"></div>
                 </div>
 
-                <div class="merge-tip">
-                    添加多个Markdown文件，调整顺序后点击"拼合文档"按钮将它们合并为一个文档。
-                </div>
 
-                <button id="merge-button" class="merge-button">拼合文档</button>
             </div>
 
             <div class="output-group">
                 <div class="panel-header">
-                    <h2>拼合结果</h2>
+                    <h2>输出</h2>
                     <div class="panel-actions">
                         <button id="clear-merge-output" class="small-button" title="清空结果">清空</button>
                     </div>
@@ -1005,6 +1015,10 @@
                 </div>
 
                 <textarea id="merged-text" class="output-textarea" placeholder="拼合结果将显示在这里..." readonly></textarea>
+            </div>
+            </div>
+            <div class="center-button-container">
+                <button id="merge-button-center" class="center-button">→</button>
             </div>
         </div>
     </div>
@@ -1308,7 +1322,7 @@
         });
 
         // 分割按钮事件监听器
-        document.getElementById('split-button').addEventListener('click', () => {
+        document.getElementById('split-button-center').addEventListener('click', () => {
             console.log('Split button clicked');
             const markdownText = document.getElementById('input-text').value;
             const targetSize = parseInt(document.getElementById('target-size').value);
@@ -1499,7 +1513,7 @@
                 });
 
                 // 拼合按钮
-                document.getElementById('merge-button').addEventListener('click', mergeDocuments);
+                document.getElementById('merge-button-center').addEventListener('click', mergeDocuments);
 
                 // 复制到剪贴板按钮
                 document.getElementById('copy-merged').addEventListener('click', () => {
