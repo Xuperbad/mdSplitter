@@ -3,21 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown文档分割与合并工具</title>
+    <title>文本对比工具</title>
+    <!-- 引入JSZip库用于创建ZIP文件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- 引入FileSaver库用于保存文件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
-        :root {
-            --primary-color: #3498db;
-            --primary-dark: #2980b9;
-            --secondary-color: #2ecc71;
-            --secondary-dark: #27ae60;
-            --text-color: #333;
-            --light-text: #666;
-            --border-color: #e0e0e0;
-            --bg-color: #f9f9f9;
-            --card-bg: #fff;
-            --shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-
         * {
             box-sizing: border-box;
             margin: 0;
@@ -25,1813 +16,705 @@
         }
 
         body {
-            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
             max-width: 1200px;
             margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             padding: 20px;
-            line-height: 1.6;
-            color: var(--text-color);
-            background-color: var(--bg-color);
         }
 
-        header {
+        h1 {
             text-align: center;
             margin-bottom: 20px;
+            color: #2c3e50;
         }
-        .container {
+
+        .description {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #7f8c8d;
+        }
+
+        .comparison-container {
             display: flex;
-            flex-direction: row;
-            justify-content: center;
-            gap: 60px;
-            margin-top: 20px;
-            position: relative;
-            width: 100%;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        .container-with-center-button {
-            position: relative;
-            width: 100%;
+        @media (min-width: 768px) {
+            .comparison-container {
+                flex-direction: row;
+            }
         }
 
-        .direction-controls {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-            background-color: #fff;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
+        .text-box {
+            flex: 1;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-            transition: all 0.2s ease;
+            flex-direction: column;
         }
 
-        .direction-controls:hover {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-            transform: translate(-50%, -50%) scale(1.1);
-        }
-
-        .direction-arrow {
-            color: #4CAF50;
-            font-size: 24px;
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--border-color);
+        .text-box h2 {
             margin-bottom: 10px;
-            height: 40px;
-        }
-
-        .panel-header h2 {
-            margin: 0;
             font-size: 18px;
-            color: var(--text-color);
-            font-weight: 500;
-        }
-
-        .panel-actions {
+            color: #2c3e50;
             display: flex;
-            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .small-button {
-            padding: 5px 10px;
-            font-size: 13px;
+        .copy-btn, .split-btn {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
             border-radius: 4px;
-            background-color: #f1f1f1;
-            color: var(--light-text);
-            border: 1px solid var(--border-color);
-            box-shadow: none;
-            transition: all 0.2s ease;
-        }
-
-        .small-button:hover {
-            background-color: #e0e0e0;
-            color: var(--text-color);
-            transform: none;
-            box-shadow: none;
-        }
-
-        .action-panel {
-            background-color: #f5f5f5;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 10px;
-        }
-
-        .action-header {
-            margin-bottom: 15px;
-        }
-
-        .action-header h3 {
-            margin: 0;
-            font-size: 16px;
+            padding: 4px 8px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
             color: #333;
         }
 
-        .action-buttons {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 15px;
-        }
-
-        .primary-button {
-            background-color: #4285F4;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
-
-        .primary-button:hover {
-            background-color: #3367D6;
-        }
-        .input-group, .output-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            width: 45%;
-            min-width: 400px;
-            max-width: 500px;
-            position: relative;
-            background-color: var(--card-bg);
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            min-height: 600px;
-            overflow: visible;
-        }
-        .drop-zone {
-            position: relative;
-            border: 1px dashed var(--border-color);
-            border-radius: 6px;
-            padding: 0;
-            text-align: center;
-            transition: all 0.3s ease;
-            background-color: rgba(0, 0, 0, 0.01);
-            margin-bottom: 10px;
-            cursor: pointer;
-            height: 60px;
+        .split-container {
             display: flex;
             align-items: center;
-            justify-content: center;
+            margin-right: 8px;
         }
 
-        .drop-zone.active {
-            background-color: rgba(52, 152, 219, 0.05);
-            border-color: var(--primary-color);
+        .split-input {
+            width: 60px;
+            height: 28px;
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-right: 4px;
+            text-align: center;
         }
 
-        .file-label {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: var(--secondary-color);
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 0px;
-            transition: all 0.2s ease;
-            font-weight: 500;
-            box-shadow: 0 2px 5px rgba(46, 204, 113, 0.2);
+        .copy-btn:hover, .split-btn:hover {
+            background-color: #e9ecef;
         }
 
-        .file-label:hover {
-            background-color: var(--secondary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(46, 204, 113, 0.3);
-        }
-
-        .file-input {
-            display: none;
+        .copy-btn svg, .split-btn svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 4px;
+            stroke: #333; /* 确保SVG图标也是黑色 */
         }
 
         textarea {
             width: 100%;
-            height: auto;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            resize: none;
-            line-height: 1.5;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-            flex: 1;
-            overflow-y: auto;
+            height: 300px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            font-size: 16px;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
         }
 
-        textarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 3px rgba(52, 152, 219, 0.1);
+        .text-box textarea {
+            border: 2px dashed #ddd;
+            transition: all 0.3s;
         }
 
-        textarea::placeholder {
-            color: #aaa;
+        .text-box textarea.drag-over {
+            border-color: #3498db;
+            background-color: rgba(52, 152, 219, 0.05);
         }
+
         .controls {
             display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-            margin: 0;
-            padding: 10px;
-            background-color: rgba(0, 0, 0, 0.02);
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            min-height: 60px;
-            overflow: visible;
+            justify-content: center;
+            margin: 30px 0;
         }
 
-        .control-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            position: relative;
-        }
-
-        .control-item label {
-            font-weight: 500;
-            color: var(--light-text);
-            font-size: 14px;
-        }
-        input[type="number"], input[type="text"] {
-            width: 80px;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        input[type="text"] {
-            width: 150px;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 3px rgba(52, 152, 219, 0.1);
-        }
         button {
-            padding: 10px 20px;
-            background-color: var(--primary-color);
+            background-color: #3498db;
             color: white;
             border: none;
-            border-radius: 6px;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 15px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 5px rgba(52, 152, 219, 0.2);
+            transition: background-color 0.3s;
         }
 
         button:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+            background-color: #2980b9;
         }
 
-        #split-button {
-            background-color: var(--primary-color);
-        }
-
-        #split-button:hover {
-            background-color: var(--primary-dark);
-        }
-
-        #debug-button {
-            background-color: #95a5a6;
-        }
-
-        #debug-button:hover {
-            background-color: #7f8c8d;
-        }
-        .output-files {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            height: 370px;
-            overflow-y: auto;
-            padding-right: 5px;
-            flex: 1;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 10px;
-            background-color: white;
-        }
-
-        .output-files:empty::before {
-            content: '分割结果将在这里显示';
-            color: #aaa;
+        .results {
             text-align: center;
-            padding: 150px 0;
-            font-style: italic;
-            display: block;
-            width: 100%;
-        }
-
-        .file-item {
-            border: 1px solid var(--border-color);
-            padding: 10px;
-            border-radius: 6px;
-            background-color: white;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-            transition: all 0.2s ease;
-        }
-
-        .file-item:hover {
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
-        }
-
-        .file-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            font-weight: 500;
-            color: var(--primary-color);
-        }
-
-        .file-content {
-            white-space: pre-wrap;
-            background-color: #f8f9fa;
-            padding: 10px;
-            border-radius: 4px;
-            max-height: 150px;
-            overflow-y: auto;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 13px;
-            line-height: 1.5;
-            border: 1px solid #eee;
-            word-break: break-word;
-        }
-        .download-all {
             margin-top: 20px;
-            align-self: center;
-            background-color: var(--secondary-color);
-            padding: 12px 25px;
-            font-size: 16px;
-        }
-
-        .download-all:hover {
-            background-color: var(--secondary-dark);
-        }
-
-        .download-link {
-            display: inline-block;
-            padding: 6px 12px;
-            background-color: var(--primary-color);
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-
-        .download-link:hover {
-            background-color: var(--primary-dark);
-        }
-        .debug-info {
-            margin-top: 10px;
-            font-size: 12px;
-            color: #666;
-        }
-
-        /* 文档拼合页面样式 */
-        .merge-files-container {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            margin-bottom: 10px;
-            height: 370px;
-            min-height: 370px;
-            max-height: 370px;
-            overflow: hidden;
-        }
-
-        .file-list-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            font-weight: 500;
-            color: var(--primary-color);
-            height: 30px;
-        }
-
-        .file-list-actions {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .sort-options {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: var(--light-text);
-        }
-
-        .sort-select {
-            padding: 4px 8px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 13px;
-            background-color: white;
-            color: var(--text-color);
-            cursor: pointer;
-        }
-
-        .sort-select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
-        }
-
-        .file-list-tip {
-            font-size: 13px;
-            color: var(--light-text);
-            font-style: italic;
-            font-weight: normal;
-        }
-
-        .output-textarea {
-            border: 1px solid var(--border-color);
-            background-color: white;
-            height: 370px;
-            flex: 1;
-            padding: 10px;
-            border-radius: 6px;
-        }
-
-        .output-textarea.active-drop {
-            border-color: var(--primary-color);
-            background-color: rgba(52, 152, 219, 0.1);
-            border-width: 2px;
-        }
-
-        .merge-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .merge-header h3 {
-            margin: 0;
-            color: var(--primary-color);
-            font-weight: 500;
-            font-size: 18px;
-        }
-
-        .merge-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .merge-button {
-            background-color: var(--primary-color);
-        }
-
-        .merge-button:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .clear-button {
-            background-color: #e74c3c;
-        }
-
-        .clear-button:hover {
-            background-color: #c0392b;
-        }
-
-        .merge-tip {
-            font-size: 14px;
-            color: var(--light-text);
-            margin-bottom: 15px;
-            font-style: italic;
-            line-height: 1.5;
-        }
-
-        .file-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            height: calc(100% - 40px);
-            min-height: calc(100% - 40px);
-            max-height: calc(100% - 40px);
-            overflow-y: auto;
-            padding: 10px;
-            flex: 1;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: white;
-        }
-
-        .file-item-draggable {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background-color: white;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            cursor: move;
-            transition: all 0.2s ease;
-            position: relative;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-        }
-
-        .file-item-draggable:before {
-            content: '≡';
-            position: absolute;
-            left: 8px;
-            color: #aaa;
-            font-size: 16px;
-        }
-
-        .file-item-draggable .file-name {
-            margin-left: 20px;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 70%;
-        }
-
-        .file-item-draggable .file-size {
-            font-size: 12px;
-            color: var(--light-text);
-        }
-
-        .file-item-draggable .file-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .file-action-button {
-            background: none;
-            border: none;
-            color: var(--light-text);
-            cursor: pointer;
-            padding: 3px 8px;
-            border-radius: 4px;
-            transition: all 0.2s ease;
-            font-size: 13px;
-        }
-
-        .file-action-button:hover {
-            background-color: rgba(0, 0, 0, 0.05);
-            color: var(--text-color);
-        }
-
-        .file-action-button.remove {
-            color: #e74c3c;
-        }
-
-        .file-action-button.remove:hover {
-            background-color: rgba(231, 76, 60, 0.1);
-        }
-
-
-
-
-
-        .merge-result {
-            margin-bottom: 10px;
-            padding: 10px;
-            border-radius: 6px;
-            background-color: rgba(52, 152, 219, 0.05);
-            border: 1px solid var(--border-color);
-            display: none;
-            height: 60px;
-            overflow: hidden;
-        }
-
-        .merge-result-title {
-            font-weight: 500;
-            color: var(--primary-color);
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .merge-result-title:before {
-            content: '✓';
-            font-size: 18px;
-        }
-
-        .merge-result-stats {
-            margin-bottom: 15px;
-            line-height: 1.6;
-        }
-
-        .merge-result-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .file-item-draggable:hover {
-            background-color: #f0f0f0;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .file-item-draggable.dragging {
-            opacity: 0.5;
-            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
-        }
-
-        .file-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            overflow: hidden;
-        }
-
-        .file-number {
-            min-width: 24px;
-            height: 24px;
-            background-color: #4CAF50;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 12px;
-        }
-
-        .file-name {
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .file-size {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .file-actions {
-            display: flex;
-            gap: 5px;
-        }
-
-        .file-preview-btn, .file-remove-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 5px;
-            color: #666;
-            transition: color 0.2s ease;
-            box-shadow: none;
-        }
-
-        .file-preview-btn:hover {
-            color: #2196F3;
-        }
-
-        .file-remove-btn:hover {
-            color: #f44336;
-        }
-
-        /* 帮助部分样式 */
-        .help-section {
-            max-width: 1000px;
-            margin: 30px auto 0;
-            padding: 0 20px;
-        }
-
-        .help-toggle {
-            display: inline-block;
-            padding: 8px 16px;
-            background-color: #f5f5f5;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            color: #555;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-
-        .help-toggle:hover {
-            background-color: #e0e0e0;
-        }
-
-        .help-content {
-            margin-top: 15px;
             padding: 20px;
-            background-color: #f9f9f9;
-            border: 1px solid #eee;
-            border-radius: 8px;
-        }
-
-        .help-content h3 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: #333;
-            font-size: 18px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-        }
-
-        .help-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .help-item {
-            background-color: white;
-            padding: 15px;
-            border-radius: 6px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .help-item h4 {
-            margin-top: 0;
-            color: #4285F4;
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
-
-        .help-item ol, .help-item ul {
-            margin: 0;
-            padding-left: 20px;
-        }
-
-        .help-item li {
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-
-        /* 导航栏样式 */
-        .nav-tabs {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 0 0 20px;
-        }
-
-        .nav-tab {
-            padding: 8px 20px;
-            background-color: #f1f1f1;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 500;
-            color: var(--light-text);
-            transition: all 0.2s ease;
-        }
-
-        .nav-tab:hover {
-            background-color: #e0e0e0;
-        }
-
-        .nav-tab.active {
-            background-color: var(--primary-color);
-            color: white;
-            box-shadow: 0 1px 3px rgba(52, 152, 219, 0.2);
-        }
-
-        .page-container {
+            border-radius: 4px;
+            background-color: #f8f9fa;
             display: none;
         }
 
-        .page-container.active {
+        .results.show {
             display: block;
         }
 
-        /* 中间按钮区域 */
-        .center-button-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
+        .similarity {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
         }
 
-        .center-button {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-color: var(--primary-color);
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border: none;
-            transition: all 0.2s ease;
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin: 15px 0;
+            height: 20px;
         }
 
-        .center-button:hover {
-            transform: scale(1.1);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-        }
-
-        .center-button.secondary {
-            background-color: #f1f1f1;
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-        }
-
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            body {
-                padding: 15px 10px;
-            }
-
-            h1 {
-                font-size: 24px;
-                margin-bottom: 20px;
-            }
-
-            .container {
-                flex-direction: column;
-                gap: 20px;
-            }
-
-            .input-group, .output-group {
-                width: 100%;
-                padding: 15px;
-                min-height: 600px;
-                overflow: visible;
-            }
-
-            textarea {
-                min-height: 250px;
-            }
-
-            .controls {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-                padding: 12px;
-                height: auto;
-                min-height: 60px;
-                overflow: visible;
-            }
-
-            .control-item {
-                width: 100%;
-            }
-
-            input[type="text"] {
-                width: 100%;
-            }
-
-            button {
-                width: 100%;
-                padding: 12px;
-            }
-
-            .file-item {
-                padding: 12px;
-            }
-
-            .file-content {
-                max-height: 150px;
-            }
+        .progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            background-color: #3498db;
+            width: 0%;
+            transition: width 0.5s ease-in-out;
         }
     </style>
 </head>
 <body>
-    <header>
-        <div class="nav-tabs">
-            <button class="nav-tab active" id="split-tab">文档分割</button>
-            <button class="nav-tab" id="merge-tab">文档拼合</button>
-        </div>
-    </header>
+    <div class="container">
+        <h1>文本对比工具</h1>
+        <p class="description">将两个文本粘贴到下面的文本框中，或直接拖拽单个/多个MD文件到文本框（多文件会按名称排序并合并），然后点击"对比文本"按钮查看相似度</p>
 
-    <!-- 分割页面 -->
-    <div class="page-container active" id="split-page">
-        <div class="container-with-center-button">
-            <div class="container">
-        <div class="input-group">
-            <div class="panel-header">
-                <h2>输入</h2>
-                <div class="panel-actions">
-                    <button id="clear-input" class="small-button" title="清空输入区">清空</button>
-                </div>
-            </div>
-            <div class="drop-zone" id="drop-zone">
-                <label for="file-input" class="file-label">选择文件</label>
-                <input type="file" id="file-input" class="file-input" accept=".md,.markdown,text/markdown,text/plain">
-            </div>
-            <textarea id="input-text" placeholder="在此粘贴您的Markdown文本..."></textarea>
-            <div class="controls">
-                <div class="control-item">
-                    <label for="target-size">目标字符数:</label>
-                    <input type="number" id="target-size" value="1250" min="500" max="5000">
-                </div>
-                <div class="control-item">
-                    <label for="range-size">可接受范围:</label>
-                    <input type="number" id="range-size" value="250" min="100" max="1000">
-                </div>
-                <div class="control-item">
-                    <label for="base-filename">基础文件名:</label>
-                    <input type="text" id="base-filename" value="分割文档" style="width: 150px;">
-                </div>
-                <button id="debug-button" style="background-color: #607D8B; display: none;">显示调试信息</button>
-            </div>
-        </div>
-        <div class="output-group">
-            <div class="panel-header">
-                <h2>输出</h2>
-                <div class="panel-actions">
-                    <button id="clear-output" class="small-button" title="清空结果区">清空</button>
-                </div>
-            </div>
-            <div id="output-files" class="output-files"></div>
-            <div style="height: 60px; display: flex; align-items: center; justify-content: center;">
-                <button id="download-all" class="download-all" style="display: none;">下载所有文件</button>
-            </div>
-        </div>
-            </div>
-            <div class="center-button-container">
-                <button id="split-button-center" class="center-button">→</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 拼合页面 -->
-    <div class="page-container" id="merge-page">
-        <div class="container-with-center-button">
-            <div class="container">
-            <div class="input-group">
-                <div class="panel-header">
-                    <h2>输入</h2>
-                    <div class="panel-actions">
-                        <button id="clear-merge-input" class="small-button" title="清空文件列表">清空</button>
-                    </div>
-                </div>
-
-                <div class="drop-zone" id="merge-drop-zone">
-                    <label for="merge-file-input" class="file-label">选择文件</label>
-                    <input type="file" id="merge-file-input" class="file-input" accept=".md,.markdown,text/markdown,text/plain" multiple>
-                </div>
-
-                <div class="merge-files-container">
-                    <div class="file-list-header">
-                        <span>文件列表</span>
-                        <div class="file-list-actions">
-                            <div class="sort-options">
-                                <select id="sort-method" class="sort-select">
-                                    <option value="natural">自然排序</option>
-                                    <option value="alpha">字母顺序</option>
-                                    <option value="numeric">数字顺序</option>
-                                    <option value="time">添加时间</option>
-                                </select>
-                            </div>
+        <div class="comparison-container">
+            <div class="text-box">
+                <h2>
+                    <span>文本 1（原始文本）</span>
+                    <div style="display: flex; align-items: center;">
+                        <div class="split-container">
+                            <input type="number" class="split-input" id="split-input-1" value="1200" min="100" title="拆分字数">
+                            <button class="split-btn" id="split-btn-1" title="按指定字数拆分文本并下载">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                拆分
+                            </button>
                         </div>
+                        <button class="copy-btn" id="copy-btn-1" title="复制文本">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            复制
+                        </button>
                     </div>
-                    <div class="file-list" id="merge-file-list"></div>
-                </div>
-
-
+                </h2>
+                <textarea id="text1" placeholder="在此粘贴第一个文本..."></textarea>
             </div>
 
-            <div class="output-group">
-                <div class="panel-header">
-                    <h2>输出</h2>
-                    <div class="panel-actions">
-                        <button id="clear-merge-output" class="small-button" title="清空结果">清空</button>
+            <div class="text-box">
+                <h2>
+                    <span>文本 2（整理后文本）</span>
+                    <div style="display: flex; align-items: center;">
+                        <div class="split-container">
+                            <input type="number" class="split-input" id="split-input-2" value="1200" min="100" title="拆分字数">
+                            <button class="split-btn" id="split-btn-2" title="按指定字数拆分文本并下载">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                拆分
+                            </button>
+                        </div>
+                        <button class="copy-btn" id="copy-btn-2" title="复制文本">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            复制
+                        </button>
                     </div>
-                </div>
+                </h2>
+                <textarea id="text2" placeholder="在此粘贴第二个文本..."></textarea>
+            </div>
+        </div>
 
-                <div class="merge-result" id="merge-result">
-                    <div class="merge-result-title">拼合完成</div>
-                    <div class="merge-result-stats" id="merge-result-stats"></div>
-                    <div class="merge-result-actions">
-                        <button id="copy-merged" class="merge-button">复制到剪贴板</button>
-                        <button id="download-merged" class="merge-button">下载文件</button>
-                    </div>
-                </div>
+        <div class="controls">
+            <button id="compare-btn">对比文本</button>
+        </div>
 
-                <textarea id="merged-text" class="output-textarea" placeholder="拼合结果将显示在这里..." readonly></textarea>
+        <div class="results" id="results">
+            <h2>对比结果</h2>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
             </div>
-            </div>
-            <div class="center-button-container">
-                <button id="merge-button-center" class="center-button">→</button>
-            </div>
+            <div class="similarity" id="similarity-result">相似度: <span id="similarity-percentage">0</span>%</div>
         </div>
     </div>
 
     <script>
-        // 计算文本的实际字符数（不包括Markdown标记）
-        function countCharacters(text) {
-            // 移除代码块
-            text = text.replace(/```[\s\S]*?```/g, '');
-            // 移除链接
-            text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
-            // 移除图片
-            text = text.replace(/!\[([^\]]*)\]\([^)]+\)/g, '');
-            // 移除HTML标签
-            text = text.replace(/<[^>]+>/g, '');
-            // 移除标题标记
-            text = text.replace(/^#+\s+/gm, '');
-            // 移除粗体和斜体标记
-            text = text.replace(/\*\*([^*]+)\*\*/g, '$1');
-            text = text.replace(/\*([^*]+)\*/g, '$1');
-            text = text.replace(/__([^_]+)__/g, '$1');
-            text = text.replace(/_([^_]+)_/g, '$1');
+        document.addEventListener('DOMContentLoaded', function() {
+            const compareBtn = document.getElementById('compare-btn');
+            const text1Element = document.getElementById('text1');
+            const text2Element = document.getElementById('text2');
+            const resultsElement = document.getElementById('results');
+            const similarityPercentageElement = document.getElementById('similarity-percentage');
+            const progressBarElement = document.getElementById('progress-bar');
 
-            return text.length;
-        }
-
-        // 分割Markdown文本
-        function splitMarkdown(content, targetSize, rangeSize, baseName) {
-            console.log('Starting to split document...');
-            console.log(`Target size: ${targetSize}, Range: ${rangeSize}`);
-            console.log(`Total content length: ${content.length}`);
-
-            const minSize = targetSize - rangeSize;
-            const maxSize = targetSize + rangeSize;
-
-            // 智能分割文本，尽量在标点符号处分割
-            function forceSplitText(text, maxChunkSize) {
-                const chunks = [];
-                let start = 0;
-
-                while (start < text.length) {
-                    let end = Math.min(start + maxChunkSize, text.length);
-                    if (end < text.length) {
-                        // 定义搜索范围，增加一些额外字符以找到更好的分割点
-                        const searchRange = text.substring(start, Math.min(end + 200, text.length));
-                        let foundBreakPoint = false;
-
-                        // 1. 优先在句子结束标点处分割（中英文的句号、问号、感叹号等）
-                        const sentenceEndRegex = /[.!?。！？]/g;
-                        let match;
-                        let bestSentenceEnd = -1;
-
-                        // 重置正则表达式的lastIndex
-                        sentenceEndRegex.lastIndex = 0;
-
-                        // 查找所有句子结束标点
-                        while ((match = sentenceEndRegex.exec(searchRange)) !== null) {
-                            // 确保找到的位置不超过最大块大小
-                            if (match.index <= maxChunkSize) {
-                                bestSentenceEnd = match.index;
-                            } else {
-                                break; // 超出范围，停止搜索
-                            }
-                        }
-
-                        // 如果找到了合适的句子结束点
-                        if (bestSentenceEnd >= 0) {
-                            end = start + bestSentenceEnd + 1; // +1 包含标点符号
-                            foundBreakPoint = true;
-                        }
-
-                        // 2. 如果没找到句子结束标点，尝试在逗号、分号等次要标点处分割
-                        if (!foundBreakPoint) {
-                            const minAcceptableSize = Math.floor(maxChunkSize * 0.7); // 至少要有70%的目标大小
-                            const punctuationRegex = /[,;:，；：、]/g;
-                            let bestPunctEnd = -1;
-
-                            // 重置正则表达式的lastIndex
-                            punctuationRegex.lastIndex = 0;
-
-                            // 查找所有次要标点
-                            while ((match = punctuationRegex.exec(searchRange)) !== null) {
-                                // 确保找到的位置不超过最大块大小且大于最小可接受大小
-                                if (match.index <= maxChunkSize && match.index >= minAcceptableSize) {
-                                    bestPunctEnd = match.index;
-                                } else if (match.index > maxChunkSize) {
-                                    break; // 超出范围，停止搜索
-                                }
-                            }
-
-                            // 如果找到了合适的标点
-                            if (bestPunctEnd >= 0) {
-                                end = start + bestPunctEnd + 1; // +1 包含标点符号
-                                foundBreakPoint = true;
-                            }
-                        }
-
-                        // 3. 如果还是没找到，尝试在空格或换行处分割
-                        if (!foundBreakPoint) {
-                            // 先尝试找换行
-                            const lastNewline = searchRange.substring(0, maxChunkSize).lastIndexOf('\n');
-                            if (lastNewline > maxChunkSize * 0.5) { // 至少要有50%的目标大小
-                                end = start + lastNewline + 1;
-                                foundBreakPoint = true;
-                            } else {
-                                // 再尝试找空格
-                                const lastSpace = searchRange.substring(0, maxChunkSize).lastIndexOf(' ');
-                                if (lastSpace > maxChunkSize * 0.5) {
-                                    end = start + lastSpace + 1;
-                                    foundBreakPoint = true;
-                                }
-                            }
-                        }
-
-                        // 如果所有方法都失败，保持原来的强制分割方式
-                    }
-
-                    chunks.push(text.substring(start, end));
-                    start = end;
-                }
-
-                return chunks;
-            }
-
-            // 使用智能分割算法分割文本
-            const chunks = forceSplitText(content, maxSize);
-            console.log(`Split into ${chunks.length} chunks`);
-
-            // 创建结果数组
-            const results = [];
-            for (let i = 0; i < chunks.length; i++) {
-                const chunk = chunks[i];
-                const chunkSize = countCharacters(chunk);
-
-                results.push({
-                    filename: `${baseName}-part${i+1}.md`,
-                    content: chunk,
-                    size: chunkSize
-                });
-
-                console.log(`Created part ${i+1} with ${chunkSize} characters`);
-            }
-
-            // 如果没有生成任何文件（可能是输入为空），创建一个空文件
-            if (results.length === 0) {
-                results.push({
-                    filename: `${baseName}-part1.md`,
-                    content: '',
-                    size: 0
-                });
-                console.log('Created empty file as no content was provided');
-            }
-
-            console.log(`Splitting complete. Created ${results.length} files.`);
-            return results;
-        }
-
-        // 创建下载链接
-        function createDownloadLink(filename, content) {
-            const blob = new Blob([content], { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.textContent = '下载';
-            a.className = 'download-link';
-            return a;
-        }
-
-        // 创建ZIP文件包含所有分割的文件
-        async function createZipFile(files) {
-            // 动态加载JSZip库
-            if (typeof JSZip === 'undefined') {
-                const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-                document.head.appendChild(script);
-
-                // 等待库加载完成
-                await new Promise(resolve => script.onload = resolve);
-            }
-
-            const zip = new JSZip();
-
-            // 添加所有文件到ZIP
-            files.forEach(file => {
-                zip.file(file.filename, file.content);
-            });
-
-            // 生成ZIP文件
-            const blob = await zip.generateAsync({ type: 'blob' });
-            const url = URL.createObjectURL(blob);
-
-            // 创建下载链接
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${document.getElementById('base-filename').value}.zip`;
-            a.click();
-
-            // 清理
-            URL.revokeObjectURL(url);
-        }
-
-        // 文件拖放和选择功能
-        const dropZone = document.getElementById('drop-zone');
-        const fileInput = document.getElementById('file-input');
-        const inputText = document.getElementById('input-text');
-
-        // 阻止默认拖放行为
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-            document.body.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        // 处理拖放文件 - 在选择文件区域
-        dropZone.addEventListener('drop', handleDrop, false);
-
-        // 处理拖放文件 - 在整个分割页面
-        document.getElementById('split-page').addEventListener('drop', handleDrop, false);
-
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            handleFiles(files);
-        }
-
-        // 处理文件选择
-        fileInput.addEventListener('change', function() {
-            handleFiles(this.files);
-        });
-
-        function handleFiles(files) {
-            if (files.length) {
-                const file = files[0];
-                // 检查文件类型
-                if (file.type === 'text/markdown' || file.type === 'text/plain' || file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
-                    readFile(file);
-                } else {
-                    alert('请选择Markdown文件(.md或.markdown)或纯文本文件');
-                }
-            }
-        }
-
-        function readFile(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                inputText.value = e.target.result;
-                // 更新基础文件名为上传文件名（去除扩展名）
-                const fileName = file.name.replace(/\.[^/.]+$/, "");
-                document.getElementById('base-filename').value = fileName;
-            };
-            reader.readAsText(file);
-        }
-
-        // 拖放区域视觉反馈
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, highlight, false);
-            // 整个分割页面也添加视觉反馈
-            document.getElementById('split-page').addEventListener(eventName, () => {
-                dropZone.classList.add('active');
-            }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, unhighlight, false);
-            // 整个分割页面也添加视觉反馈
-            document.getElementById('split-page').addEventListener(eventName, () => {
-                dropZone.classList.remove('active');
-            }, false);
-        });
-
-        function highlight() {
-            dropZone.classList.add('active');
-        }
-
-        function unhighlight() {
-            dropZone.classList.remove('active');
-        }
-
-        // 清空输入区按钮
-        document.getElementById('clear-input').addEventListener('click', () => {
-            document.getElementById('input-text').value = '';
-            document.getElementById('base-filename').value = '分割文档';
-        });
-
-        // 清空输出区按钮
-        document.getElementById('clear-output').addEventListener('click', () => {
-            document.getElementById('output-files').innerHTML = '';
-            document.getElementById('download-all').style.display = 'none';
-        });
-
-        // 调试按钮事件监听器
-        document.getElementById('debug-button').addEventListener('click', () => {
-            // 创建调试信息对话框
-            const debugInfo = {
-                'inputText': document.getElementById('input-text').value.length > 0 ? '有内容' : '无内容',
-                'targetSize': document.getElementById('target-size').value,
-                'rangeSize': document.getElementById('range-size').value,
-                'baseName': document.getElementById('base-filename').value,
-                'browserInfo': navigator.userAgent,
-                'screenSize': `${window.innerWidth}x${window.innerHeight}`,
-                'timestamp': new Date().toISOString()
+            // 存储文档名称
+            const documentNames = {
+                text1: '原始文本',
+                text2: '整理后文本'
             };
 
-            // 显示调试信息
-            alert(JSON.stringify(debugInfo, null, 2));
-            console.log('Debug info:', debugInfo);
-        });
+            // 添加拖放功能
+            setupDragAndDrop(text1Element, 'text1');
+            setupDragAndDrop(text2Element, 'text2');
 
-        // 分割按钮事件监听器
-        document.getElementById('split-button-center').addEventListener('click', () => {
-            console.log('Split button clicked');
-            const markdownText = document.getElementById('input-text').value;
-            const targetSize = parseInt(document.getElementById('target-size').value);
-            const rangeSize = parseInt(document.getElementById('range-size').value);
-            const baseName = document.getElementById('base-filename').value;
+            // 添加复制按钮功能
+            setupCopyButton('copy-btn-1', 'text1');
+            setupCopyButton('copy-btn-2', 'text2');
 
-            if (!markdownText) {
-                alert('请输入Markdown文本');
-                return;
-            }
+            // 添加拆分按钮功能
+            setupSplitButton('split-btn-1', 'split-input-1', 'text1');
+            setupSplitButton('split-btn-2', 'split-input-2', 'text2');
 
-            // 已移除箭头方向切换代码
-
-            // 显示处理中的提示
-            const outputFiles = document.getElementById('output-files');
-            outputFiles.innerHTML = '<div style="text-align: center; padding: 20px;">正在分割文档...</div>';
-
-            // 使用setTimeout来避免浏览器卡顿
-            console.log('Setting timeout for splitting process');
-            setTimeout(() => {
-                console.log('Starting splitting process');
-                const results = splitMarkdown(markdownText, targetSize, rangeSize, baseName);
-                outputFiles.innerHTML = '';
-
-                // 添加摘要信息
-                const summaryDiv = document.createElement('div');
-                summaryDiv.style.marginBottom = '20px';
-                summaryDiv.style.padding = '10px';
-                summaryDiv.style.backgroundColor = '#f0f8ff';
-                summaryDiv.style.borderRadius = '4px';
-
-                // 计算实际字符数（去除Markdown标记后）
-                const actualCharCount = countCharacters(markdownText);
-
-                // 计算分割后的实际字符数总和
-                const totalSplitSize = results.reduce((sum, file) => sum + file.size, 0);
-
-                // 计算每个文件的字符数统计
-                const fileSizeStats = {};
-                results.forEach(result => {
-                    const sizeRange = Math.floor(result.size / 100) * 100;
-                    fileSizeStats[sizeRange] = (fileSizeStats[sizeRange] || 0) + 1;
-                });
-
-                // 生成文件大小分布统计
-                let sizeDistribution = '';
-                Object.keys(fileSizeStats).sort((a, b) => a - b).forEach(range => {
-                    sizeDistribution += `${range}-${parseInt(range) + 99}字符: ${fileSizeStats[range]}个文件<br>`;
-                });
-
-                summaryDiv.innerHTML = `
-                    <strong>分割结果摘要:</strong><br>
-                    <span style="color: #555; font-size: 0.9em;">整个文档已被分割成多个小文件，每个文件字符数在目标范围内</span><br><br>
-                    原始总字符数: ${markdownText.length}<br>
-                    有效字符数(去除Markdown标记): ${actualCharCount}<br>
-                    <strong>分割后文件数: ${results.length}</strong><br>
-                    每个文件的目标字符数范围: ${targetSize - rangeSize} - ${targetSize + rangeSize}<br>
-                    分割后字符总数: ${totalSplitSize}<br><br>
-                    <strong>文件大小分布:</strong><br>
-                    ${sizeDistribution}
-                `;
-                outputFiles.appendChild(summaryDiv);
-
-                results.forEach(result => {
-                    const fileItem = document.createElement('div');
-                    fileItem.className = 'file-item';
-
-                    const fileHeader = document.createElement('div');
-                    fileHeader.className = 'file-header';
-
-                    const fileTitle = document.createElement('span');
-                    fileTitle.textContent = `${result.filename} (${result.size} 字符)`;
-
-                    fileHeader.appendChild(fileTitle);
-                    fileHeader.appendChild(createDownloadLink(result.filename, result.content));
-
-                    const fileContent = document.createElement('div');
-                    fileContent.className = 'file-content';
-                    fileContent.textContent = result.content.length > 500
-                        ? result.content.substring(0, 500) + '...'
-                        : result.content;
-
-                    fileItem.appendChild(fileHeader);
-                    fileItem.appendChild(fileContent);
-                    outputFiles.appendChild(fileItem);
-                });
-
-                const downloadAllButton = document.getElementById('download-all');
-                downloadAllButton.style.display = 'block';
-                downloadAllButton.onclick = () => createZipFile(results);
-                console.log('Splitting process completed successfully');
-            }, 50); // 小延迟以确保界面能先更新
-        });
-    </script>
-
-    <!-- 添加JSZip库用于批量下载 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js" defer></script>
-
-    <script>
-        // 页面切换功能
-        document.addEventListener('DOMContentLoaded', () => {
-            const splitTab = document.getElementById('split-tab');
-            const mergeTab = document.getElementById('merge-tab');
-            const splitPage = document.getElementById('split-page');
-            const mergePage = document.getElementById('merge-page');
-            const splitSubtitle = document.getElementById('split-subtitle');
-            const mergeSubtitle = document.getElementById('merge-subtitle');
-
-            // 切换到分割页面
-            splitTab.addEventListener('click', () => {
-                splitTab.classList.add('active');
-                mergeTab.classList.remove('active');
-                splitPage.classList.add('active');
-                mergePage.classList.remove('active');
-                splitSubtitle.style.display = 'block';
-                mergeSubtitle.style.display = 'none';
+            // 为拆分字数输入框添加点击自动全选功能
+            document.getElementById('split-input-1').addEventListener('click', function() {
+                this.select();
+            });
+            document.getElementById('split-input-2').addEventListener('click', function() {
+                this.select();
             });
 
-            // 切换到拼合页面
-            mergeTab.addEventListener('click', () => {
-                mergeTab.classList.add('active');
-                splitTab.classList.remove('active');
-                mergePage.classList.add('active');
-                splitPage.classList.remove('active');
-                mergeSubtitle.style.display = 'block';
-                splitSubtitle.style.display = 'none';
-            });
+            // 设置复制按钮功能
+            function setupCopyButton(buttonId, textAreaId) {
+                const copyBtn = document.getElementById(buttonId);
+                const textArea = document.getElementById(textAreaId);
 
-            // 初始化拼合页面的拖放排序功能
-            const fileList = document.getElementById('merge-file-list');
-            if (fileList) {
-                new Sortable(fileList, {
-                    animation: 150,
-                    ghostClass: 'sortable-ghost',
-                    onEnd: function() {
-                        console.log('Order changed');
+                copyBtn.addEventListener('click', function() {
+                    // 选中文本
+                    textArea.select();
+                    textArea.setSelectionRange(0, 99999); // 兼容移动设备
+
+                    // 复制文本
+                    try {
+                        // 尝试使用现代Clipboard API
+                        if (navigator.clipboard && window.isSecureContext) {
+                            navigator.clipboard.writeText(textArea.value).then(function() {
+                                showCopySuccess();
+                            }).catch(function(err) {
+                                // 如果Clipboard API失败，回退到execCommand
+                                fallbackCopy();
+                            });
+                        } else {
+                            // 回退到传统方法
+                            fallbackCopy();
+                        }
+                    } catch (err) {
+                        console.error('复制失败:', err);
+                        alert('复制失败，请手动复制');
                     }
+
+                    function fallbackCopy() {
+                        const successful = document.execCommand('copy');
+                        if (successful) {
+                            showCopySuccess();
+                        } else {
+                            alert('复制失败，请手动复制');
+                        }
+                    }
+
+                    function showCopySuccess() {
+                        // 显示复制成功的反馈
+                        const originalText = copyBtn.innerHTML;
+                        copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 已复制';
+                        copyBtn.style.backgroundColor = '#d4edda';
+                        copyBtn.style.borderColor = '#c3e6cb';
+                        copyBtn.style.color = '#155724';
+
+                        // 2秒后恢复原样
+                        setTimeout(function() {
+                            copyBtn.innerHTML = originalText;
+                            copyBtn.style.backgroundColor = '';
+                            copyBtn.style.borderColor = '';
+                            copyBtn.style.color = '';
+                        }, 2000);
+                    }
+
+                    // 取消选择
+                    window.getSelection().removeAllRanges();
                 });
             }
 
-            // 拼合页面的拖放区域
-            const mergeDropZone = document.getElementById('merge-drop-zone');
-            const mergeFileInput = document.getElementById('merge-file-input');
-
-            if (mergeDropZone && mergeFileInput) {
-                // 阻止默认拖放行为
+            // 设置拖放功能
+            function setupDragAndDrop(textArea, textAreaId) {
+                // 阻止默认行为以允许拖放
                 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                    mergeDropZone.addEventListener(eventName, preventDefaults, false);
-                    document.body.addEventListener(eventName, preventDefaults, false);
+                    textArea.addEventListener(eventName, preventDefaults, false);
                 });
 
-                // 拖放区域视觉反馈
+                function preventDefaults(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+
+                // 添加视觉反馈
                 ['dragenter', 'dragover'].forEach(eventName => {
-                    mergeDropZone.addEventListener(eventName, highlight, false);
-                    // 整个拼合页面也添加视觉反馈
-                    document.getElementById('merge-page').addEventListener(eventName, () => {
-                        mergeDropZone.classList.add('active');
-                    }, false);
+                    textArea.addEventListener(eventName, highlight, false);
                 });
 
                 ['dragleave', 'drop'].forEach(eventName => {
-                    mergeDropZone.addEventListener(eventName, unhighlight, false);
-                    // 整个拼合页面也添加视觉反馈
-                    document.getElementById('merge-page').addEventListener(eventName, () => {
-                        mergeDropZone.classList.remove('active');
-                    }, false);
+                    textArea.addEventListener(eventName, unhighlight, false);
                 });
 
-                // 处理拖放文件 - 在选择文件区域
-                mergeDropZone.addEventListener('drop', (e) => {
+                function highlight() {
+                    textArea.classList.add('drag-over');
+                }
+
+                function unhighlight() {
+                    textArea.classList.remove('drag-over');
+                }
+
+                // 处理文件拖放
+                textArea.addEventListener('drop', handleDrop, false);
+
+                function handleDrop(e) {
                     const dt = e.dataTransfer;
                     const files = dt.files;
-                    handleMergeFiles(files);
-                }, false);
 
-                // 处理拖放文件 - 在整个拼合页面
-                document.getElementById('merge-page').addEventListener('drop', (e) => {
-                    const dt = e.dataTransfer;
-                    const files = dt.files;
-                    handleMergeFiles(files);
-                }, false);
+                    if (files.length > 0) {
+                        // 过滤出所有MD文件
+                        const mdFiles = Array.from(files).filter(file =>
+                            file.name.toLowerCase().endsWith('.md') || file.type === 'text/markdown'
+                        );
 
-                // 处理文件选择
-                mergeFileInput.addEventListener('change', function() {
-                    handleMergeFiles(this.files);
-                });
-
-                // 清空文件列表按钮
-                document.getElementById('clear-merge-input').addEventListener('click', () => {
-                    document.getElementById('merge-file-list').innerHTML = '';
-                    mergeFiles = [];
-                });
-
-                // 清空拼合结果按钮
-                document.getElementById('clear-merge-output').addEventListener('click', () => {
-                    document.getElementById('merged-text').value = '';
-                    document.getElementById('merge-result').style.display = 'none';
-                });
-
-                // 拼合按钮
-                document.getElementById('merge-button-center').addEventListener('click', mergeDocuments);
-
-                // 复制到剪贴板按钮
-                document.getElementById('copy-merged').addEventListener('click', () => {
-                    const mergedText = document.getElementById('merged-text');
-                    mergedText.select();
-                    document.execCommand('copy');
-                    alert('已复制到剪贴板');
-                });
-
-                // 下载拼合文件按钮
-                document.getElementById('download-merged').addEventListener('click', () => {
-                    const mergedText = document.getElementById('merged-text').value;
-                    if (mergedText) {
-                        const blob = new Blob([mergedText], { type: 'text/markdown' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'merged_document.md';
-                        a.click();
-                        URL.revokeObjectURL(url);
-                    }
-                });
-            }
-
-            // 存储拼合文件的数组
-            let mergeFiles = [];
-
-            // 处理拼合文件
-            function handleMergeFiles(files) {
-                if (files.length) {
-                    // 创建一个计数器来跟踪已处理的文件数量
-                    let processedCount = 0;
-                    const totalFiles = files.length;
-
-                    Array.from(files).forEach(file => {
-                        // 检查文件类型
-                        if (file.type === 'text/markdown' || file.type === 'text/plain' ||
-                            file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
-
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                const fileContent = e.target.result;
-                                const fileSize = fileContent.length;
-
-                                // 检查是否已经添加过相同的文件
-                                const isDuplicate = mergeFiles.some(f => f.name === file.name && f.content === fileContent);
-                                if (!isDuplicate) {
-                                    // 添加到文件数组
-                                    mergeFiles.push({
-                                        name: file.name,
-                                        content: fileContent,
-                                        size: fileSize
-                                    });
-                                }
-
-                                // 增加计数器
-                                processedCount++;
-
-                                // 如果所有文件都已处理完毕，则排序并更新UI
-                                if (processedCount === totalFiles) {
-                                    // 按文件名排序
-                                    sortMergeFiles();
-                                    // 更新文件列表UI
-                                    updateMergeFileList();
-                                }
-                            };
-                            reader.readAsText(file);
-                        } else {
-                            alert('请选择Markdown文件(.md或.markdown)或纯文本文件');
-                            processedCount++;
+                        if (mdFiles.length === 0) {
+                            alert('请拖入Markdown(.md)文件');
+                            return;
                         }
-                    });
-                }
-            }
 
-            // 按文件名排序
-            function sortMergeFiles() {
-                const sortMethod = document.getElementById('sort-method').value;
+                        // 记录第一个文件的名称（不带扩展名）
+                        const firstFileName = mdFiles[0].name.replace(/\.md$/i, '');
+                        documentNames[textAreaId] = firstFileName;
 
-                // 为每个文件添加时间戳（如果没有）
-                mergeFiles.forEach(file => {
-                    if (!file.timestamp) {
-                        file.timestamp = Date.now();
-                    }
-                });
+                        // 如果只有一个文件，直接读取
+                        if (mdFiles.length === 1) {
+                            readFile(mdFiles[0], content => {
+                                textArea.value = content;
+                            });
+                            return;
+                        }
 
-                switch (sortMethod) {
-                    case 'natural':
-                        // 自然排序（尝试智能地处理数字和文本）
-                        mergeFiles.sort((a, b) => {
-                            // 提取文件名中的数字部分（如果有）
-                            const aMatch = a.name.match(/(\d+)/);
-                            const bMatch = b.name.match(/(\d+)/);
+                        // 多个文件时，按文件名排序
+                        mdFiles.sort((a, b) => {
+                            return a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'});
+                        });
 
-                            // 如果两个文件名都包含数字，按数字大小排序
-                            if (aMatch && bMatch) {
-                                const aNum = parseInt(aMatch[0]);
-                                const bNum = parseInt(bMatch[0]);
-                                if (aNum !== bNum) {
-                                    return aNum - bNum;
+                        // 读取所有文件并拼接内容
+                        const contents = [];
+                        let filesProcessed = 0;
+
+                        mdFiles.forEach(file => {
+                            readFile(file, content => {
+                                contents.push({
+                                    name: file.name,
+                                    content: content
+                                });
+
+                                filesProcessed++;
+
+                                // 当所有文件都处理完毕时
+                                if (filesProcessed === mdFiles.length) {
+                                    // 按文件名排序
+                                    contents.sort((a, b) => {
+                                        return a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'});
+                                    });
+
+                                    // 拼接内容
+                                    const combinedContent = contents.map(item => item.content).join('\n\n');
+                                    textArea.value = combinedContent;
                                 }
-                            }
-
-                            // 否则按字母顺序排序
-                            return a.name.localeCompare(b.name);
+                            });
                         });
-                        break;
+                    }
+                }
 
-                    case 'alpha':
-                        // 纯字母顺序
-                        mergeFiles.sort((a, b) => a.name.localeCompare(b.name));
-                        break;
-
-                    case 'numeric':
-                        // 尝试提取数字并按数字排序
-                        mergeFiles.sort((a, b) => {
-                            const aMatch = a.name.match(/(\d+)/);
-                            const bMatch = b.name.match(/(\d+)/);
-
-                            if (aMatch && bMatch) {
-                                return parseInt(aMatch[0]) - parseInt(bMatch[0]);
-                            } else if (aMatch) {
-                                return -1; // 有数字的排在前面
-                            } else if (bMatch) {
-                                return 1;
-                            } else {
-                                return a.name.localeCompare(b.name);
-                            }
-                        });
-                        break;
-
-                    case 'time':
-                        // 按添加时间排序
-                        mergeFiles.sort((a, b) => a.timestamp - b.timestamp);
-                        break;
+                // 读取文件内容的辅助函数
+                function readFile(file, callback) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        callback(event.target.result);
+                    };
+                    reader.readAsText(file);
                 }
             }
 
-            // 监听排序方式变化
-            document.getElementById('sort-method').addEventListener('change', () => {
-                sortMergeFiles();
-                updateMergeFileList();
-            });
+            compareBtn.addEventListener('click', function() {
+                const text1 = text1Element.value.trim();
+                const text2 = text2Element.value.trim();
 
-            // 读取拼合文件
-            function readMergeFile(file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const fileContent = e.target.result;
-                    const fileSize = fileContent.length;
-
-                    // 检查是否已经添加过相同的文件
-                    const isDuplicate = mergeFiles.some(f => f.name === file.name && f.content === fileContent);
-                    if (isDuplicate) {
-                        alert(`文件 "${file.name}" 已经添加过了`);
-                        return;
-                    }
-
-                    // 添加到文件数组
-                    mergeFiles.push({
-                        name: file.name,
-                        content: fileContent,
-                        size: fileSize
-                    });
-
-                    // 按文件名排序
-                    sortMergeFiles();
-
-                    // 更新文件列表UI
-                    updateMergeFileList();
-                };
-                reader.readAsText(file);
-            }
-
-            // 更新拼合文件列表
-            function updateMergeFileList() {
-                const fileList = document.getElementById('merge-file-list');
-                fileList.innerHTML = '';
-
-                mergeFiles.forEach((file, index) => {
-                    const fileItem = document.createElement('div');
-                    fileItem.className = 'file-item-draggable';
-                    fileItem.dataset.index = index;
-
-                    const fileName = document.createElement('div');
-                    fileName.className = 'file-name';
-                    fileName.textContent = file.name;
-
-                    const fileSize = document.createElement('div');
-                    fileSize.className = 'file-size';
-                    fileSize.textContent = `${file.size} 字符`;
-
-                    const fileActions = document.createElement('div');
-                    fileActions.className = 'file-actions';
-
-                    const removeButton = document.createElement('button');
-                    removeButton.className = 'file-action-button remove';
-                    removeButton.textContent = '删除';
-                    removeButton.onclick = () => removeFile(index);
-
-                    const previewButton = document.createElement('button');
-                    previewButton.className = 'file-action-button';
-                    previewButton.textContent = '预览';
-                    previewButton.onclick = () => previewFile(index);
-
-                    fileActions.appendChild(previewButton);
-                    fileActions.appendChild(removeButton);
-
-                    fileItem.appendChild(fileName);
-                    fileItem.appendChild(fileSize);
-                    fileItem.appendChild(fileActions);
-
-                    fileList.appendChild(fileItem);
-                });
-            }
-
-            // 删除文件
-            function removeFile(index) {
-                mergeFiles.splice(index, 1);
-                updateMergeFileList();
-            }
-
-            // 预览文件
-            function previewFile(index) {
-                const file = mergeFiles[index];
-                const previewContent = file.content.length > 1000
-                    ? file.content.substring(0, 1000) + '...'
-                    : file.content;
-
-                alert(`文件名: ${file.name}\n大小: ${file.size} 字符\n\n${previewContent}`);
-            }
-
-            // 拼合文档
-            function mergeDocuments() {
-                if (mergeFiles.length === 0) {
-                    alert('请先添加文件');
+                if (text1 === '' || text2 === '') {
+                    alert('请在两个文本框中都输入内容');
                     return;
                 }
 
-                // 获取当前排序后的文件索引
-                const fileItems = document.querySelectorAll('.file-item-draggable');
-                const orderedFiles = Array.from(fileItems).map(item => {
-                    const index = parseInt(item.dataset.index);
-                    return mergeFiles[index];
-                });
+                const similarityPercentage = calculateSimilarity(text1, text2);
 
-                // 拼合文件内容
-                let mergedContent = '';
-                let totalSize = 0;
+                // 显示结果
+                similarityPercentageElement.textContent = similarityPercentage.toFixed(2);
+                progressBarElement.style.width = `${similarityPercentage}%`;
+                resultsElement.classList.add('show');
+            });
 
-                orderedFiles.forEach((file, index) => {
-                    // 如果不是第一个文件，添加分隔符
-                    if (index > 0) {
-                        mergedContent += '\n\n---\n\n';
+            // 计算文本相似度
+            function calculateSimilarity(text1, text2) {
+                // 移除标点符号和空格，转为小写以进行更准确的比较
+                const cleanText1 = text1.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '').toLowerCase();
+                const cleanText2 = text2.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '').toLowerCase();
+
+                // 使用最长公共子序列算法计算相似度
+                const lcsLength = longestCommonSubsequence(cleanText1, cleanText2);
+
+                // 计算相似度百分比
+                const maxLength = Math.max(cleanText1.length, cleanText2.length);
+                if (maxLength === 0) return 100; // 两个空字符串视为完全相同
+
+                return (lcsLength / maxLength) * 100;
+            }
+
+            // 最长公共子序列算法
+            function longestCommonSubsequence(text1, text2) {
+                const m = text1.length;
+                const n = text2.length;
+
+                // 创建二维数组来存储子问题的解
+                const dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
+
+                // 填充dp表
+                for (let i = 1; i <= m; i++) {
+                    for (let j = 1; j <= n; j++) {
+                        if (text1[i - 1] === text2[j - 1]) {
+                            dp[i][j] = dp[i - 1][j - 1] + 1;
+                        } else {
+                            dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                        }
+                    }
+                }
+
+                return dp[m][n];
+            }
+
+            // 设置拆分按钮功能
+            function setupSplitButton(buttonId, inputId, textAreaId) {
+                const splitBtn = document.getElementById(buttonId);
+                const splitInput = document.getElementById(inputId);
+                const textArea = document.getElementById(textAreaId);
+
+                splitBtn.addEventListener('click', function() {
+                    const text = textArea.value.trim();
+                    if (text === '') {
+                        alert('请先在文本框中输入内容');
+                        return;
                     }
 
-                    // 添加文件内容
-                    mergedContent += file.content;
-                    totalSize += file.size;
+                    const splitSize = parseInt(splitInput.value);
+                    if (isNaN(splitSize) || splitSize < 100) {
+                        alert('请输入有效的拆分字数（至少100字）');
+                        return;
+                    }
+
+                    // 显示处理中的反馈
+                    const originalText = splitBtn.innerHTML;
+                    splitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> 处理中...';
+                    splitBtn.disabled = true;
+
+                    // 使用setTimeout让UI有时间更新
+                    setTimeout(function() {
+                        try {
+                            // 拆分文本并创建ZIP文件
+                            splitTextAndDownload(text, splitSize, textAreaId);
+
+                            // 恢复按钮状态
+                            splitBtn.innerHTML = originalText;
+                            splitBtn.disabled = false;
+                        } catch (err) {
+                            console.error('拆分文本失败:', err);
+                            alert('拆分文本失败: ' + err.message);
+
+                            // 恢复按钮状态
+                            splitBtn.innerHTML = originalText;
+                            splitBtn.disabled = false;
+                        }
+                    }, 100);
+                });
+            }
+
+            // 拆分文本并下载为ZIP文件
+            function splitTextAndDownload(text, targetSize, textAreaId) {
+                // 计算浮动范围（上下浮动10%）
+                const minSize = Math.floor(targetSize * 0.9);
+                const maxSize = Math.ceil(targetSize * 1.1);
+
+                // 拆分文本
+                const parts = splitTextIntoParts(text, minSize, maxSize);
+
+                if (parts.length === 0) {
+                    alert('文本拆分失败，请检查文本内容');
+                    return;
+                }
+
+                // 在控制台输出拆分后的各文档文本，用于调试
+                console.log(`文本已拆分为 ${parts.length} 个部分：`);
+                parts.forEach((part, index) => {
+                    console.log(`--- 第 ${index + 1} 部分 (${part.length} 字符) ---`);
+                    console.log(part.substring(0, 100) + (part.length > 100 ? '...' : ''));
+                    console.log('------------------------');
                 });
 
-                // 显示拼合结果
-                document.getElementById('merged-text').value = mergedContent;
+                // 获取文档名称
+                const docName = documentNames[textAreaId];
 
-                // 更新结果统计
-                const statsElement = document.getElementById('merge-result-stats');
-                statsElement.innerHTML = `
-                    <p>已成功拼合 ${orderedFiles.length} 个文件</p>
-                    <p>总字符数: ${mergedContent.length}</p>
-                    <p>有效字符数: ${countCharacters(mergedContent)}</p>
-                `;
+                // 创建ZIP文件
+                const zip = new JSZip();
 
-                // 显示结果区域
-                document.getElementById('merge-result').style.display = 'block';
+                // 添加文件到ZIP
+                parts.forEach((part, index) => {
+                    const fileName = `${docName}-part${index + 1}.md`;
+                    zip.file(fileName, part);
+                });
+
+                // 生成并下载ZIP文件
+                zip.generateAsync({ type: 'blob' })
+                    .then(function(content) {
+                        saveAs(content, `${docName}.zip`);
+                    })
+                    .catch(function(err) {
+                        console.error('创建ZIP文件失败:', err);
+                        alert('创建ZIP文件失败: ' + err.message);
+                    });
+            }
+
+            // 智能拆分文本
+            function splitTextIntoParts(text, minSize, maxSize) {
+                console.log(`开始拆分文本，目标大小：${minSize}-${maxSize} 字符`);
+                console.log(`总文本长度：${text.length} 字符`);
+
+                const parts = [];
+
+                // 首先尝试按段落拆分
+                let paragraphs = text.split(/\n\s*\n/);
+
+                // 如果只有一个段落，则尝试按句子拆分
+                if (paragraphs.length <= 1) {
+                    console.log("文本没有明确的段落分隔，尝试按句子拆分");
+                    // 按句号、问号、感叹号、换行符等拆分
+                    paragraphs = text.split(/(?<=[。！？.!?\n])\s*/);
+                    console.log(`按句子拆分后，共有 ${paragraphs.length} 个句子`);
+                } else {
+                    console.log(`文本共有 ${paragraphs.length} 个段落`);
+                }
+
+                // 如果拆分后的段落/句子数量仍然很少，但每个都很长，则进一步拆分
+                const refinedParagraphs = [];
+                for (let i = 0; i < paragraphs.length; i++) {
+                    const para = paragraphs[i].trim();
+                    if (para === '') continue;
+
+                    // 如果段落/句子长度超过最大长度的一半，尝试按逗号、分号等进一步拆分
+                    if (para.length > maxSize / 2) {
+                        console.log(`段落/句子 ${i+1} 长度(${para.length})超过阈值(${maxSize/2})，进一步拆分`);
+                        const subParts = para.split(/(?<=[，；,;])\s*/);
+                        refinedParagraphs.push(...subParts.filter(p => p.trim() !== ''));
+                    } else {
+                        refinedParagraphs.push(para);
+                    }
+                }
+
+                console.log(`细分后共有 ${refinedParagraphs.length} 个文本单元`);
+
+                // 现在开始组合文本单元到目标大小
+                let currentText = '';
+
+                for (let i = 0; i < refinedParagraphs.length; i++) {
+                    const paragraph = refinedParagraphs[i].trim();
+                    if (paragraph === '') continue;
+
+                    console.log(`文本单元 ${i+1}: ${paragraph.length} 字符`);
+
+                    // 如果当前文本单元加上当前文本超过最大长度，且当前文本已达到最小长度，则创建新部分
+                    if (currentText.length + paragraph.length + 2 > maxSize && currentText.length >= minSize) {
+                        console.log(`当前文本 ${currentText.length} 字符 + 文本单元 ${paragraph.length} 字符 > ${maxSize}，创建新部分`);
+                        parts.push(currentText);
+                        console.log(`添加第 ${parts.length} 部分，长度：${currentText.length} 字符`);
+                        currentText = paragraph;
+                    } else {
+                        // 否则，将文本单元添加到当前文本
+                        if (currentText.length > 0) {
+                            console.log(`将文本单元添加到当前文本，当前长度：${currentText.length} 字符，添加后：${currentText.length + paragraph.length + 2} 字符`);
+                            // 根据原始文本单元的类型选择分隔符
+                            const separator = paragraph.startsWith('#') ? '\n\n' :
+                                             (i > 0 && refinedParagraphs[i-1].endsWith('\n')) ? '' :
+                                             (paragraph.length > 50) ? '\n\n' : ' ';
+                            currentText += separator + paragraph;
+                        } else {
+                            console.log(`开始新文本，长度：${paragraph.length} 字符`);
+                            currentText = paragraph;
+                        }
+                    }
+                }
+
+                // 添加最后一部分
+                if (currentText.length > 0) {
+                    parts.push(currentText);
+                    console.log(`添加最后一部分，长度：${currentText.length} 字符`);
+                }
+
+                // 如果文本太长但没有被拆分，强制拆分
+                if (parts.length === 1 && parts[0].length > maxSize) {
+                    console.log(`文本仍然太长(${parts[0].length})且未被拆分，强制拆分`);
+                    const forcedParts = [];
+                    let remaining = parts[0];
+
+                    while (remaining.length > 0) {
+                        // 找到合适的拆分点
+                        let splitPoint = Math.min(maxSize, remaining.length);
+
+                        // 尝试在句子边界拆分
+                        const sentenceEnd = remaining.substring(0, splitPoint).lastIndexOf('。');
+                        if (sentenceEnd > minSize) {
+                            splitPoint = sentenceEnd + 1; // +1 to include the period
+                        } else {
+                            // 如果没有句子边界，尝试在逗号处拆分
+                            const commaEnd = remaining.substring(0, splitPoint).lastIndexOf('，');
+                            if (commaEnd > minSize) {
+                                splitPoint = commaEnd + 1; // +1 to include the comma
+                            }
+                        }
+
+                        forcedParts.push(remaining.substring(0, splitPoint));
+                        console.log(`强制拆分：添加长度为 ${splitPoint} 的部分`);
+                        remaining = remaining.substring(splitPoint).trim();
+                    }
+
+                    return forcedParts;
+                }
+
+                console.log(`拆分完成，共 ${parts.length} 个部分`);
+                return parts;
             }
         });
     </script>
